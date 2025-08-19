@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useEffect, useState } from "react"
+import { useLayoutEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 
@@ -15,18 +14,17 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const router = useRouter()
 
-  useEffect(() => {
-    const checkAuth = () => {
-      const username = localStorage.getItem("username")
-      if (username) {
-        setIsAuthenticated(true)
-      } else {
-        router.push("/auth/login")
-      }
-      setIsLoading(false)
-    }
+  useLayoutEffect(() => {
+    const token = document.cookie.split("; ").find(row => row.startsWith("auth_token="))
 
-    checkAuth()
+    if (token) {
+      setIsAuthenticated(true)
+      setIsLoading(false)
+    } else {
+      const currentPath = window.location.pathname + window.location.search
+      // 用 replace 避免污染历史记录
+      router.replace(`/auth/login?returnUrl=${encodeURIComponent(currentPath)}`)
+    }
   }, [router])
 
   if (isLoading) {

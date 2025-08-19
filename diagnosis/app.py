@@ -4,6 +4,7 @@ import torch
 from PIL import Image
 import io, os
 from typing import List
+
 import uvicorn
 from dataset import CornDiseaseDataset
 from model import create_model, get_preprocessing_transforms
@@ -49,7 +50,7 @@ async def health_check():
     """健康检查"""
     return {"status": "healthy"}
 
-@app.post("/predict")
+@app.post("/api/diagnosis")
 async def predict(files: List[UploadFile] = File(...)):
     """
     对上传的图像进行病虫害分类预测
@@ -102,7 +103,7 @@ async def predict(files: List[UploadFile] = File(...)):
     
     return {"predictions": results}
 
-@app.post("/predict_single")
+@app.post("/api/diagnosis_single")
 async def predict_single(file: UploadFile = File(...)):
     """
     对单个图像进行病虫害分类预测

@@ -12,7 +12,8 @@ import (
 )
 
 var (
-	staticDir string
+	staticDir            string
+	frontendStaticOutDir string
 )
 
 func init() {
@@ -22,7 +23,8 @@ func init() {
 		panic(err)
 	}
 	exPath := filepath.Dir(ex)
-	staticDir = filepath.Join(exPath, "static", "out")
+	staticDir = filepath.Join(exPath, "static")
+	frontendStaticOutDir = filepath.Join(staticDir, "out")
 }
 
 func main() {
@@ -75,7 +77,9 @@ func setupRoutes(router *gin.Engine) {
 	// 用户控制接口
 	router.POST("/api/user/register", RegisterUser)
 	router.POST("/api/user/login", LoginUser)
-	router.GET("/api/user/user_info/:username", GetUserInfo)
+	router.GET("/api/user/info/:username", GetUserInfo)
+	router.POST("/api/user/change-password", ChangePassword)
+	router.POST("/api/user/update-avatar", UpdateUserAvatar)
 
 	// 静态文件服务接口
 	router.GET("/auth/login", ServeLogin)
@@ -92,16 +96,40 @@ func setupRoutes(router *gin.Engine) {
 	router.POST("/api/file/upload", UploadFiles)
 
 	// 静态文件服务
-	router.Static("/_next", filepath.Join(staticDir, "_next"))
-	router.Static("/images", filepath.Join(staticDir, "images"))
+	router.Static("/_next", filepath.Join(frontendStaticOutDir, "_next"))
+	router.Static("/images", filepath.Join(frontendStaticOutDir, "images"))
+	router.Static("/static/avatars", filepath.Join(staticDir, "avatars"))
 
 	// 主页和图标
 	router.GET("/", func(c *gin.Context) {
-		c.File(filepath.Join(staticDir, "index.html"))
+		c.File(filepath.Join(frontendStaticOutDir, "index.html"))
 	})
 
+	// 用户头像
+	router.GET("/avatars/*filepath", func(c *gin.Context) {
+		filePath := c.Param("filepath")
+		c.File(filepath.Join("static/avatars", filePath))
+	})
+
+	// 诊断页
+	router.GET("/diagnosis", func(c *gin.Context) {
+		c.File(filepath.Join(frontendStaticOutDir, "diagnosis.html"))
+	})
+
+	// 聊天页
+	router.GET("/qa", func(c *gin.Context) {
+		c.File(filepath.Join(frontendStaticOutDir, "qa.html"))
+	})
+
+	// 信息控制台页
+	router.GET("/dashboard", func(c *gin.Context) {
+		c.File(filepath.Join(frontendStaticOutDir, "dashboard.html"))
+	})
+	router.GET("/dashboard.txt", ServeRegisterTxt)
+
+	// 页面图标
 	router.GET("/favicon.ico", func(c *gin.Context) {
-		c.File(filepath.Join(staticDir, "favicon.ico"))
+		c.File(filepath.Join(frontendStaticOutDir, "favicon.ico"))
 	})
 
 	// 健康检查
@@ -115,6 +143,17 @@ func setupRoutes(router *gin.Engine) {
 
 	// 404 处理
 	router.NoRoute(func(c *gin.Context) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "接口不存在"})
+		// 匹配所有 / 目录下的文件
+		filePath := c.Request.URL.Path
+		fullPath := filepath.Join(frontendStaticOutDir, filePath)
+		if _, err := os.Stat(fullPath); err == nil {
+			c.File(fullPath)
+			return
+		}
+
+		// 真正的404
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "页面或接口不存在",
+		})
 	})
 }

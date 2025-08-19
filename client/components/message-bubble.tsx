@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Card } from "@/components/ui/card"
 import { User } from "lucide-react"
@@ -13,7 +14,7 @@ interface Message {
   timestamp: string
   isStreaming?: boolean
   images?: string[]
-  messageId?: string // 添加消息ID字段
+  messageId?: string
 }
 
 interface MessageBubbleProps {
@@ -44,18 +45,48 @@ export function MessageBubble({
   const isUser = message.role === "user"
   const isStreaming = message.isStreaming || isLoading
 
-  // 时间格式化函数，兼容Unix时间戳和ISO格式
+  const [avatarURL, setAvatarURL] = useState<string | null>(null)
+
+  // 从 localStorage 读取头像
+  useEffect(() => {
+    const storedAvatar = localStorage.getItem("user_avatar")
+    if (!storedAvatar) {
+      setAvatarURL(null)
+      return
+    }
+
+    try {
+      // 尝试解析为 JSON，看是否是 Blob info
+      const parsed = JSON.parse(storedAvatar)
+      if (parsed && parsed.type === "file" && parsed.data) {
+        // 如果是 File 对象的序列化信息，需要转成 Blob
+        const byteCharacters = atob(parsed.data)
+        const byteNumbers = new Array(byteCharacters.length)
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i)
+        }
+        const byteArray = new Uint8Array(byteNumbers)
+        const blob = new Blob([byteArray], { type: parsed.mimeType || "image/png" })
+        const url = URL.createObjectURL(blob)
+        setAvatarURL(url)
+        return () => URL.revokeObjectURL(url)
+      }
+    } catch {
+      // 如果不是 JSON，就当作 Base64 或 URL
+      setAvatarURL(storedAvatar)
+    }
+  }, [])
+
+  // 时间格式化
   const formatTimestamp = (timestamp: string) => {
-    // 检查是否为Unix时间戳（纯数字字符串）
     const isUnixTimestamp = /^\d+$/.test(timestamp)
     const date = isUnixTimestamp
-      ? new Date(Number.parseInt(timestamp) * 1000) // Unix时间戳需要乘以1000
-      : new Date(timestamp) // ISO格式字符串
-
+      ? new Date(Number.parseInt(timestamp) * 1000)
+      : new Date(timestamp)
     return date.toLocaleTimeString()
   }
 
-  // 解析思考部分和正常内容（支持流式解析）
+  // 解析思考内容
   const parseStreamContent = (content: string): ParsedContent => {
     const parts: ParsedContent["parts"] = []
     let currentIndex = 0
@@ -68,40 +99,33 @@ export function MessageBubble({
       const thinkEndIndex = content.indexOf("</think>", currentIndex)
 
       if (!inThinking) {
-        // 当前不在思考模式
         if (thinkStartIndex === -1) {
-          // 没有找到开始标签，剩余都是普通内容
           normalContent += content.slice(currentIndex)
           break
         } else {
-          // 找到开始标签
           normalContent += content.slice(currentIndex, thinkStartIndex)
           if (normalContent.trim()) {
             parts.push({ type: "content", content: normalContent.trim(), isComplete: true })
             normalContent = ""
           }
           inThinking = true
-          currentIndex = thinkStartIndex + 7 // '<think>'.length
+          currentIndex = thinkStartIndex + 7
         }
       } else {
-        // 当前在思考模式
         if (thinkEndIndex === -1) {
-          // 没有找到结束标签，剩余都是思考内容（可能还在流式输出中）
           thinkingContent += content.slice(currentIndex)
           parts.push({ type: "thinking", content: thinkingContent, isComplete: false })
           break
         } else {
-          // 找到结束标签
           thinkingContent += content.slice(currentIndex, thinkEndIndex)
           parts.push({ type: "thinking", content: thinkingContent, isComplete: true })
           thinkingContent = ""
           inThinking = false
-          currentIndex = thinkEndIndex + 8 // '</think>'.length
+          currentIndex = thinkEndIndex + 8
         }
       }
     }
 
-    // 处理剩余的普通内容
     if (normalContent.trim()) {
       parts.push({ type: "content", content: normalContent.trim(), isComplete: true })
     }
@@ -113,7 +137,6 @@ export function MessageBubble({
     ? { parts: [{ type: "content" as const, content: message.content, isComplete: true }] }
     : parseStreamContent(message.content)
 
-  // 判断是否应该显示推荐问题
   const shouldShowSuggestions =
     !isUser && !isStreaming && showSuggestions && isLastMessage && message.messageId && username && onQuestionSelect
 
@@ -146,7 +169,6 @@ export function MessageBubble({
                     : "bg-white border-gray-200 shadow-sm hover:shadow-md"
                     } mb-2`}
                 >
-                  {/* 用户消息显示图片 */}
                   {isUser && message.images && message.images.length > 0 && (
                     <div className="mb-3 flex flex-wrap gap-2">
                       {message.images.map((imageUrl, imgIndex) => (
@@ -178,7 +200,6 @@ export function MessageBubble({
           </div>
         ))}
 
-        {/* 推荐问题组件 */}
         {shouldShowSuggestions && (
           <SuggestedQuestions
             messageId={message.messageId!}
@@ -188,7 +209,6 @@ export function MessageBubble({
           />
         )}
 
-        {/* 如果没有任何内容但正在流式传输，显示占位符 */}
         {parts.length === 0 && isStreaming && (
           <Card className="p-4 bg-white border-gray-200 shadow-sm">
             <div className="flex items-center gap-2">
@@ -206,9 +226,13 @@ export function MessageBubble({
 
       {isUser && (
         <Avatar className="w-8 h-8 mt-1 ring-2 ring-blue-100">
-          <AvatarFallback className="bg-gradient-to-br from-gray-500 to-gray-600 text-white">
-            <User className="w-4 h-4" />
-          </AvatarFallback>
+          {avatarURL ? (
+            <img src={avatarURL} alt="用户头像" className="w-full h-full object-cover rounded-full" />
+          ) : (
+            <AvatarFallback className="bg-gradient-to-br from-gray-500 to-gray-600 text-white">
+              <User className="w-4 h-4" />
+            </AvatarFallback>
+          )}
         </Avatar>
       )}
     </div>

@@ -49,7 +49,29 @@ export default function LoginPage() {
       if (response.ok) {
         // 登录成功，保存用户名到localStorage
         localStorage.setItem("username", username.trim())
-        router.push("/")
+        
+        // 设置认证cookie
+        document.cookie = "auth_token=true; path=/; max-age=3600";
+        
+        // 获取用户信息并存储头像
+        try {
+          const userInfoResponse = await fetch(`${API_BASE_URL}/api/user/info/${username.trim()}`)
+          const userInfoData = await userInfoResponse.json()
+          
+          if (userInfoResponse.ok && userInfoData.data) {
+            // 存储用户头像信息
+            if (userInfoData.data.avatar) {
+              localStorage.setItem("user_avatar", userInfoData.data.avatar)
+            }
+          }
+        } catch (userInfoError) {
+          console.error("获取用户信息失败:", userInfoError)
+          // 即使获取用户信息失败，也允许用户登录
+        }
+        
+        // 获取返回URL，如果没有则默认跳转到主页
+        const returnUrl = new URLSearchParams(window.location.search).get('returnUrl') || "/";
+        router.push(returnUrl);
       } else {
         setError(data.message || "登录失败")
       }
@@ -72,7 +94,7 @@ export default function LoginPage() {
               className="w-full h-full object-cover rounded-full"
             />
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">登录到玉米问答助手</h2>
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">登录到玉米智能助手</h2>
           <p className="mt-2 text-sm text-gray-600">开始与玉米问答助手的智能对话</p>
         </div>
 

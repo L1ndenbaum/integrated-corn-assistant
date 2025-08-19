@@ -9,13 +9,15 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, CheckCircle, XCircle } from "lucide-react"
+import { Loader2, CheckCircle, XCircle, Upload } from "lucide-react"
 import Link from "next/link"
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [avatar, setAvatar] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
@@ -137,6 +139,9 @@ export default function RegisterPage() {
       const formData = new FormData()
       formData.append("username", username.trim())
       formData.append("password", password)
+      if (avatar) {
+        formData.append("avatar", avatar)
+      }
 
       const response = await fetch(`${API_BASE_URL}/api/user/register`, {
         method: "POST",
@@ -146,6 +151,25 @@ export default function RegisterPage() {
       const data = await response.json()
 
       if (response.ok) {
+        // 注册成功后，获取用户信息并保存头像
+        try {
+          const userInfoResponse = await fetch(`${API_BASE_URL}/api/user/info/${username.trim()}`)
+          const userInfoData = await userInfoResponse.json()
+          
+          if (userInfoResponse.ok && userInfoData.data) {
+            // 保存用户名到localStorage
+            localStorage.setItem("username", username.trim())
+            
+            // 存储用户头像信息
+            if (userInfoData.data.avatar) {
+              localStorage.setItem("user_avatar", userInfoData.data.avatar)
+            }
+          }
+        } catch (userInfoError) {
+          console.error("获取用户信息失败:", userInfoError)
+          // 即使获取用户信息失败，也继续执行
+        }
+        
         setSuccess("注册成功！正在跳转到登录页面...")
         setTimeout(() => {
           router.push("/auth/login")
@@ -172,8 +196,8 @@ export default function RegisterPage() {
               className="w-full h-full object-cover rounded-full"
             />
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">注册玉米问答助手</h2>
-          <p className="mt-2 text-sm text-gray-600">创建您的账户，开始智能对话</p>
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">注册玉米智能助手</h2>
+          <p className="mt-2 text-sm text-gray-600">创建您的账户，开始智能农业之旅</p>
         </div>
 
         <Card>
@@ -313,6 +337,52 @@ export default function RegisterPage() {
                     {password === confirmPassword ? "密码匹配" : "密码不匹配"}
                   </div>
                 )}
+              </div>
+
+              {/* 头像上传区域 */}
+              <div className="space-y-2">
+                <Label>头像</Label>
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    {avatarPreview ? (
+                      <img 
+                        src={avatarPreview} 
+                        alt="头像预览" 
+                        className="w-16 h-16 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-yellow-100 to-green-100 flex items-center justify-center">
+                        <Upload className="w-6 h-6 text-gray-400" />
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onChange={(e) => {
+                        // 头像上传处理逻辑
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          setAvatar(file);
+                          
+                          // 创建预览
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            if (event.target?.result) {
+                              setAvatarPreview(event.target.result as string);
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    <p>可选：上传头像</p>
+                    <p className="text-xs">支持 JPG、PNG 格式</p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-400">如果不上传头像，将使用默认头像</p>
               </div>
             </CardContent>
 

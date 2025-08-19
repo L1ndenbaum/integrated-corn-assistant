@@ -488,3 +488,12 @@ func UploadFiles(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"file_ids": fileIDs})
 }
+
+// // 提供qa页面文本文件
+// func ServeQaTxt(ctx *gin.Context) {
+// 	baseDir := filepath.Dir(os.Args[0])
+// 	staticDir := filepath.Join(baseDir, "static", "out")
+// 	filePath := filepath.Join(staticDir, "qa.txt")
+
+// 	ctx.File(filePath)
+// }

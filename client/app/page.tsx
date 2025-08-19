@@ -1,585 +1,269 @@
-"use client"
+'use client';
 
-import type React from "react"
+import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { User, LogOut } from "lucide-react";
 
-import { useState, useEffect, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Menu, Send, Plus, X } from "lucide-react"
-import { MessageBubble } from "@/components/message-bubble"
-import { ConversationList } from "@/components/conversation-list"
-import { ImageUpload } from "@/components/image-upload"
-import { AuthGuard } from "@/components/auth-guard"
-import { UserMenu } from "@/components/user-menu"
-import { DragDropZone } from "@/components/drag-drop-zone"
-
-interface Message {
-  role: "user" | "assistant"
-  content: string
-  timestamp: string
-  isStreaming?: boolean
-  images?: string[] // 图片URL数组
-  messageId?: string // 添加消息ID字段
-}
-
-interface Conversation {
-  id: string
-  name: string
-  created_at: string
-  updated_at: string
-}
-
-interface UploadedFile {
-  file: File
-  fileId: string
-  preview: string
-}
-
-export default function ChatbotPage() {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
-  const [currentConversationName, setCurrentConversationName] = useState<string>("")
-  const [conversations, setConversations] = useState<Conversation[]>([])
-  const [showSidebar, setShowSidebar] = useState(true)
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
-  const [username, setUsername] = useState<string>("")
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const abortControllerRef = useRef<AbortController | null>(null)
-
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080"
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+// 用户认证按钮组件
+function UserAuthButton() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [avatar, setAvatar] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  useEffect(() => {
-    // 获取用户名
-    const storedUsername = localStorage.getItem("username")
-    if (storedUsername) {
-      setUsername(storedUsername)
-      // 在设置用户名后立即加载对话列表
-      loadConversations()
+    // 检查登录状态
+    const token = document.cookie.split('; ').find(row => row.startsWith('auth_token='));
+    if (token) {
+      setIsLoggedIn(true);
+      const storedAvatar = localStorage.getItem("user_avatar");
+      setAvatar(storedAvatar || '/placeholder-user.jpg');
+    } else {
+      setIsLoggedIn(false);
     }
-  }, [])
-
-  // 添加一个新的 useEffect 来监听 username 变化
-  useEffect(() => {
-    if (username) {
-      loadConversations()
-    }
-  }, [username])
-
-  const loadConversations = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/conversations/list/${username}`)
-      const data = await response.json()
-      setConversations(data.conversations || [])
-    } catch (error) {
-      console.error("Failed to load conversations:", error)
-    }
-  }
-
-  const loadConversation = async (conversationId: string) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}/history?username=${username}`)
-      const data = await response.json()
-
-      // 将后端返回的数据转换为前端的 Message 格式
-      const historyMessages: Message[] = []
-
-      if (Array.isArray(data)) {
-        data.forEach((item) => {
-          // 添加用户消息
-          if (item.query) {
-            // 提取用户消息中的图片URLs
-            const userImages: string[] = []
-            if (item.message_files && Array.isArray(item.message_files)) {
-              item.message_files.forEach((file: any) => {
-                if (file.type === "image" && file.url && file.belongs_to === "user") {
-                  userImages.push(file.url)
-                }
-              })
-            }
-
-            historyMessages.push({
-              role: "user",
-              content: item.query,
-              timestamp: item.created_at,
-              images: userImages.length > 0 ? userImages : undefined,
-            })
-          }
-
-          // 添加AI回复
-          if (item.answer) {
-            historyMessages.push({
-              role: "assistant",
-              content: item.answer,
-              timestamp: item.created_at,
-              messageId: item.id, // 添加消息ID
-            })
-          }
-        })
+    
+    // 添加点击外部关闭下拉菜单的事件监听器
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
       }
+    };
 
-      setMessages(historyMessages)
-      setCurrentConversationId(conversationId)
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
-      // 从对话列表中找到对话名称
-      const conversation = conversations.find((conv) => conv.id === conversationId)
-      setCurrentConversationName(conversation?.name || "对话")
-    } catch (error) {
-      console.error("Failed to load conversation:", error)
-    }
+  const handleLogout = () => {
+    // 清除所有用户相关的cookie和localStorage
+    document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
+    localStorage.removeItem("username")
+    localStorage.removeItem("user_avatar")
+    window.location.href = "/"
   }
 
-  const deleteConversation = async (conversationId: string) => {
-    try {
-      await fetch(`${API_BASE_URL}/api/conversations/${conversationId}/delete?username=${username}`, {
-        method: "DELETE",
-      })
-      setConversations((prev) => prev.filter((conv) => conv.id !== conversationId))
-      if (currentConversationId === conversationId) {
-        setMessages([])
-        setCurrentConversationId(null)
-        setCurrentConversationName("")
-      }
-    } catch (error) {
-      console.error("Failed to delete conversation:", error)
-    }
-  }
-
-  const startNewConversation = () => {
-    setMessages([])
-    setCurrentConversationId(null)
-    setCurrentConversationName("")
-    setUploadedFiles([])
-  }
-
-  const handleFileUpload = (files: File[], fileIds: string[]) => {
-    const newFiles: UploadedFile[] = files.map((file, index) => ({
-      file,
-      fileId: fileIds[index] || "",
-      preview: URL.createObjectURL(file),
-    }))
-
-    setUploadedFiles((prev) => [...prev, ...newFiles])
-  }
-
-  // 处理拖拽上传的文件
-  const handleDragDropUpload = async (files: File[]) => {
-    if (files.length === 0) return
-
-    try {
-      // 创建FormData并上传文件
-      const formData = new FormData()
-      files.forEach((file) => {
-        formData.append("files", file)
-      })
-      formData.append("username", username)
-      const response = await fetch(`${API_BASE_URL}/api/file/upload`, {
-        method: "POST",
-        body: formData,
-      })
-
-      if (!response.ok) {
-        throw new Error(`Upload failed: ${response.status}`)
-      }
-
-      const result = await response.json()
-      const fileIds = result.file_ids || []
-
-      // 调用现有的文件上传处理函数
-      handleFileUpload(files, fileIds)
-    } catch (error) {
-      console.error("Drag drop upload error:", error)
-      // 上传失败时传递空的fileIds数组
-      handleFileUpload(files, [])
-    }
-  }
-
-  const removeFile = (index: number) => {
-    setUploadedFiles((prev) => {
-      const newFiles = [...prev]
-      URL.revokeObjectURL(newFiles[index].preview)
-      newFiles.splice(index, 1)
-      return newFiles
-    })
-  }
-
-  // 处理推荐问题选择
-  const handleQuestionSelect = (question: string) => {
-    setInput(question)
-    // 可以选择自动发送或让用户确认
-    // sendMessageWithText(question)
-  }
-
-  // 发送消息的通用函数
-  const sendMessageWithText = async (messageText: string) => {
-    if (!messageText.trim() && uploadedFiles.length === 0) return
-
-    // 创建用户消息，包含上传的图片预览URLs
-    const userImages = uploadedFiles.map((file) => file.preview)
-    const userMessage: Message = {
-      role: "user",
-      content: messageText,
-      timestamp: new Date().toISOString(),
-      images: userImages.length > 0 ? userImages : undefined,
-    }
-
-    setMessages((prev) => [...prev, userMessage])
-    const currentFiles = uploadedFiles
-    setInput("")
-    setUploadedFiles([])
-    setIsLoading(true)
-
-    const assistantMessage: Message = {
-      role: "assistant",
-      content: "",
-      timestamp: new Date().toISOString(),
-      isStreaming: true,
-    }
-
-    setMessages((prev) => [...prev, assistantMessage])
-    abortControllerRef.current = new AbortController()
-
-    try {
-      // 添加用户名字段到请求数据
-      const requestData = {
-        message: messageText,
-        conversation_id: currentConversationId,
-        file_ids: currentFiles.map((f) => f.fileId).filter((id) => id),
-        username: username, // 添加用户名字段
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestData),
-        signal: abortControllerRef.current.signal,
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      if (!response.body) {
-        throw new Error("Response body is null")
-      }
-
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let accumulatedContent = ""
-      let messageId: string | undefined
-
-      try {
-        while (true) 
-        {
-          const { done, value } = await reader.read()
-          if (done) { break }
-
-          let chunk = decoder.decode(value, { stream: true })
-          if (chunk.startsWith("[ERROR]")) 
-            {
-            setMessages((prev) =>
-              prev.map((msg, index) =>
-                index === prev.length - 1
-                  ? {
-                    ...msg,
-                    content: chunk,
-                    isStreaming: false,
-                  }
-                  : msg,
-              ),
-            )
-            break
-          }
-
-          // 检查并提取messageId，但不将其添加到显示内容中
-          if (chunk.includes("[MESSAGE_ID:")) {
-            const match = chunk.match(/\[MESSAGE_ID:([^\]]+)\]/)
-            if (match) {
-              messageId = match[1]
-              // 从chunk中移除MESSAGE_ID标记，避免显示在消息内容中
-              chunk = chunk.replace(/\[MESSAGE_ID:[^\]]+\]/g, "")
-            }
-          }
-
-          // 只有在chunk不为空时才添加到内容中
-          if (chunk.trim()) {
-            accumulatedContent += chunk
-          }
-
-          setMessages((prev) =>
-            prev.map((msg, index) =>
-              index === prev.length - 1
-                ? {
-                  ...msg,
-                  content: accumulatedContent,
-                  isStreaming: true,
-                  messageId: messageId,
-                }
-                : msg,
-            ),
-          )
-        }
-
-        setMessages((prev) =>
-          prev.map((msg, index) =>
-            index === prev.length - 1
-              ? {
-                ...msg,
-                isStreaming: false,
-                messageId: messageId,
-              }
-              : msg,
-          ),
-        )
-
-        currentFiles.forEach((file) => {
-          URL.revokeObjectURL(file.preview)
-        })
-
-        await loadConversations()
-
-        // 如果是新对话，可能需要更新当前对话信息
-        if (!currentConversationId) {
-          // 重新获取对话列表，找到新创建的对话
-          const updatedResponse = await fetch(`${API_BASE_URL}/api/conversations/list/${username}`)
-          const updatedData = await updatedResponse.json()
-          const updatedConversations = updatedData.conversations || []
-
-          // 更新对话列表
-          setConversations(updatedConversations)
-
-          // 找到最新的对话（通常是第一个，因为按时间排序）
-          if (updatedConversations.length > 0) {
-            const latestConv = updatedConversations[0]
-            setCurrentConversationId(latestConv.id)
-            setCurrentConversationName(latestConv.name)
-          }
-        } else {
-          // 如果是现有对话，只需要刷新对话列表，不改变当前对话ID
-          await loadConversations()
-        }
-      } catch (streamError) {
-        if (streamError instanceof Error && streamError.name === "AbortError") {
-          console.log("Request was aborted")
-        } else {
-          console.error("Stream reading error:", streamError)
-          setMessages((prev) =>
-            prev.map((msg, index) =>
-              index === prev.length - 1
-                ? {
-                  ...msg,
-                  content: "流式传输出现错误，请重试。",
-                  isStreaming: false,
-                }
-                : msg,
-            ),
-          )
-        }
-      }
-    } catch (error) {
-      console.error("Failed to send message:", error)
-      setMessages((prev) =>
-        prev.map((msg, index) =>
-          index === prev.length - 1
-            ? {
-              ...msg,
-              content: "发送消息失败，请检查网络连接后重试。",
-              isStreaming: false,
-            }
-            : msg,
-        ),
-      )
-    } finally {
-      setIsLoading(false)
-      abortControllerRef.current = null
-    }
-  }
-
-  const sendMessage = async () => {
-    await sendMessageWithText(input)
-  }
-
-  const stopGeneration = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
-      setIsLoading(false)
-    }
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      if (isLoading) {
-        stopGeneration()
-      } else {
-        sendMessage()
-      }
-    }
+  if (!isLoggedIn) {
+    return (
+      <Link href="/auth/login" className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200">
+        登录
+      </Link>
+    );
   }
 
   return (
-    <AuthGuard>
-      <DragDropZone onFilesDropped={handleDragDropUpload} disabled={isLoading}>
-        <div className="flex h-screen bg-gray-50">
-          {/* 侧边栏 */}
-          <div
-            className={`bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out ${showSidebar ? "w-80 opacity-100" : "w-0 opacity-0 overflow-hidden"
-              }`}
+    <div className="relative" ref={dropdownRef}>
+      <DropdownMenu open={showDropdown} onOpenChange={setShowDropdown}>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="ghost" 
+            className="relative h-10 w-10 rounded-full p-0"
+            onClick={() => setShowDropdown(!showDropdown)}
           >
-            <div className="p-4 border-b border-gray-200 flex-shrink-0">
-              <Button
-                onClick={startNewConversation}
-                className="w-full justify-start gap-2 bg-transparent hover:bg-blue-50 active:scale-95 transition-all duration-150"
-                variant="outline"
+            <Avatar className="h-10 w-10">
+              {avatar ? (
+                <AvatarImage 
+                  src={avatar} 
+                  alt="用户头像" 
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : (
+                <AvatarFallback className="bg-blue-100 text-blue-600">U</AvatarFallback>
+              )}
+            </Avatar>
+            
+          </Button>
+        </DropdownMenuTrigger>
+        <AnimatePresence>
+          {showDropdown && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+            >
+              <DropdownMenuContent 
+                className="w-56"
+                align="end" 
+                forceMount
+                onCloseAutoFocus={(e) => e.preventDefault()}
               >
-                <Plus className="w-4 h-4" />
-                新建对话
-              </Button>
-            </div>
-
-            <ConversationList
-              conversations={conversations}
-              currentConversationId={currentConversationId}
-              onSelectConversation={loadConversation}
-              onDeleteConversation={deleteConversation}
-            />
-          </div>
-
-          {/* 主聊天区域 */}
-          <div className="flex-1 flex flex-col">
-            {/* 头部 */}
-            <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowSidebar(!showSidebar)}
-                  className="hover:bg-gray-100 active:scale-95 transition-all duration-150"
+                <DropdownMenuItem className="cursor-pointer" onClick={
+                    () => {
+                      window.location.href = "/dashboard"
+                    }
+                  }
                 >
-                  <Menu className="w-4 h-4" />
-                </Button>
-                <h1 className="text-lg font-semibold">{currentConversationName || "玉米问答助手"}</h1>
-              </div>
-              <div className="flex items-center gap-2">
-                {isLoading && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={stopGeneration}
-                    className="hover:bg-red-50 hover:border-red-200 active:scale-95 transition-all duration-150 bg-transparent"
-                  >
-                    停止生成
-                  </Button>
-                )}
-                <UserMenu />
-              </div>
-            </div>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>查看个人信息</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>退出登录</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </DropdownMenu>
+    </div>
+  );
+}
 
-            {/* 消息区域 */}
-            <ScrollArea className="flex-1 p-4">
-              <div className="max-w-4xl mx-auto space-y-4">
-                {messages.length === 0 ? (
-                  <div className="text-center text-gray-500 mt-20">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full overflow-hidden bg-gradient-to-br from-yellow-100 to-green-100 p-2">
-                      <img
-                        src="/images/corn-avatar.jpeg"
-                        alt="玉米问答助手"
-                        className="w-full h-full object-cover rounded-full"
-                      />
-                    </div>
-                    <p className="text-lg mb-2 text-gray-700">我是玉米问答助手</p>
-                    <p className="text-sm text-gray-600">有什么可以帮忙的😀？</p>
-                    <p className="text-xs text-gray-400 mt-2">💡 提示：可以直接拖拽图片到窗口中上传</p>
-                  </div>
-                ) : (
-                  messages.map((message, index) => (
-                    <MessageBubble
-                      key={index}
-                      message={message}
-                      isLoading={message.isStreaming}
-                      username={username}
-                      onQuestionSelect={handleQuestionSelect}
-                      showSuggestions={true}
-                      isLastMessage={index === messages.length - 1}
-                    />
-                  ))
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollArea>
+export default function MainPage() {
+  const [isMounted, setIsMounted] = useState(false);
 
-            {/* 输入区域 */}
-            <div className="bg-white border-t border-gray-200 p-4">
-              <div className="max-w-4xl mx-auto">
-                {/* 文件预览 */}
-                {uploadedFiles.length > 0 && (
-                  <div className="mb-3 flex flex-wrap gap-2">
-                    {uploadedFiles.map((uploadedFile, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={uploadedFile.preview || "/placeholder.svg"}
-                          alt={`Upload ${index + 1}`}
-                          className="w-16 h-16 object-cover rounded-lg border"
-                        />
-                        {!uploadedFile.fileId && (
-                          <div className="absolute inset-0 bg-red-500 bg-opacity-20 rounded-lg flex items-center justify-center">
-                            <span className="text-xs text-red-600 font-medium">上传失败</span>
-                          </div>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          className="absolute -top-2 -right-2 w-5 h-5 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-all duration-200 active:scale-90"
-                          onClick={() => removeFile(index)}
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-                <div className="flex items-end gap-2">
-                  <div className="flex-1 relative">
-                    <Input
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      placeholder={isLoading ? "玉米问答助手正在回复中... 按Enter停止" : "输入消息..."}
-                      className="pr-20 min-h-[44px] resize-none"
-                      disabled={false}
-                    />
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                      <ImageUpload onUpload={handleFileUpload} disabled={isLoading} />
-                    </div>
-                  </div>
-                  <Button
-                    onClick={isLoading ? stopGeneration : sendMessage}
-                    disabled={!isLoading && !input.trim() && uploadedFiles.length === 0}
-                    size="sm"
-                    className="h-[44px] px-4 active:scale-95 transition-all duration-150"
-                    variant={isLoading ? "destructive" : "default"}
-                  >
-                    {isLoading ? "停止" : <Send className="w-4 h-4" />}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex flex-col items-center justify-center p-4">
+      {/* 背景装饰元素 */}
+      <div className="absolute inset-0 overflow-hidden -z-10">
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full bg-green-200 opacity-20"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              width: `${Math.random() * 100 + 20}px`,
+              height: `${Math.random() * 100 + 20}px`,
+            }}
+            animate={{
+              y: [0, -20, 0],
+              x: [0, Math.random() * 20 - 10, 0],
+            }}
+            transition={{
+              duration: Math.random() * 5 + 5,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="max-w-6xl w-full text-center mb-12">
+        <div className="absolute top-4 right-4">
+          <UserAuthButton />
         </div>
-      </DragDropZone>
-    </AuthGuard>
-  )
+        <motion.h1 
+          className="text-4xl md:text-6xl font-bold text-emerald-800 mb-4"
+          initial={{ opacity: 0, y: -20 }}
+          animate={isMounted ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.8 }}
+        >
+          玉米智能助手
+        </motion.h1>
+        <motion.p 
+          className="text-lg md:text-xl text-emerald-600 max-w-2xl mx-auto"
+          initial={{ opacity: 0 }}
+          animate={isMounted ? { opacity: 1 } : {}}
+          transition={{ delay: 0.3, duration: 0.8 }}
+        >
+          智能农业诊断与知识问答平台
+        </motion.p>
+      </div>
+
+      {/* 主要功能区域 */}
+      <motion.div 
+        className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={isMounted ? { opacity: 1, scale: 1 } : {}}
+        transition={{ delay: 0.5, duration: 0.8 }}
+      >
+        {/* 智能诊断决策 */}
+        <Link href="/diagnosis" passHref>
+          <motion.div 
+            className="bg-white rounded-2xl shadow-xl p-8 cursor-pointer border border-emerald-100 hover:border-emerald-300 transition-all duration-300"
+            whileHover={{ scale: 1.03, y: -10 }}
+            whileTap={{ scale: 0.98 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={isMounted ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.7, duration: 0.6 }}
+          >
+            <div className="flex flex-col items-center">
+              <motion.div 
+                className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mb-6"
+                whileHover={{ scale: 1.2 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </motion.div>
+              <h2 className="text-2xl font-bold text-emerald-800 mb-3">智能诊断决策</h2>
+              <p className="text-gray-600 text-center mb-4">
+                通过图像识别和AI分析，快速诊断玉米病虫害问题
+              </p>
+              <div className="inline-flex items-center text-emerald-600 font-medium group">
+                开始诊断
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1 group-hover:translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+          </motion.div>
+        </Link>
+
+        {/* 知识问答 */}
+        <Link href="/qa" passHref>
+          <motion.div 
+            className="bg-white rounded-2xl shadow-xl p-8 cursor-pointer border border-emerald-100 hover:border-emerald-300 transition-all duration-300"
+            whileHover={{ scale: 1.03, y: -10 }}
+            whileTap={{ scale: 0.98 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={isMounted ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.9, duration: 0.6 }}
+          >
+            <div className="flex flex-col items-center">
+              <motion.div 
+                className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mb-6"
+                whileHover={{ scale: 1.2 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+              </motion.div>
+              <h2 className="text-2xl font-bold text-emerald-800 mb-3">知识问答</h2>
+              <p className="text-gray-600 text-center mb-4">
+                获取专业的玉米种植知识和解决方案
+              </p>
+              <div className="inline-flex items-center text-emerald-600 font-medium group">
+                立即提问
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1 group-hover:translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+          </motion.div>
+        </Link>
+      </motion.div>
+
+      {/* 底部说明 */}
+      <motion.div 
+        className="mt-16 text-center text-gray-500 max-w-2xl"
+        initial={{ opacity: 0 }}
+        animate={isMounted ? { opacity: 1 } : {}}
+        transition={{ delay: 1.2, duration: 0.8 }}
+      >
+        <p className="mb-2">© 2025 玉米智诊助手 - 智能农业解决方案</p>
+        <p className="text-sm">为现代农业提供专业支持</p>
+      </motion.div>
+    </div>
+  );
 }

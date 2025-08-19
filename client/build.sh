@@ -7,7 +7,7 @@ npm run build
 
 echo "Moving exported static files..."
 
-TARGET_DIR="../server/static/out"
+TARGET_DIR="../server-go/static/out"
 
 # 删除旧的目标目录
 if [ -d "$TARGET_DIR" ]; then

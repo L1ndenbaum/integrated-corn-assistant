@@ -1,7 +1,9 @@
 node_modules/
 out/
+static/
 .next/
 /decision-tables
 /disease-diagnosis
 /diagnosis/data/
 /diagnosis/corn_disease_model*
+/client copy
