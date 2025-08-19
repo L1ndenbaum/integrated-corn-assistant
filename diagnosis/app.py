@@ -23,6 +23,13 @@ model = None
 transform = None
 device = None
 
+ENG_NAME_TO_ZH = {
+        "CercosporaLeafSpot":"玉米灰斑病",
+        "Healthy":"健康", 
+        "NothernLeafBlight":"玉米大斑病",
+        "Rust":"玉米锈病"
+    }
+
 def initialize_model():
     """初始化模型和相关组件"""
     global model, transform, device
@@ -89,7 +96,7 @@ async def predict(files: List[UploadFile] = File(...)):
                 confidence, predicted = torch.max(probabilities, 1)
             
             # 获取类别名称
-            class_name = CornDiseaseDataset.get_class_name(predicted.item())
+            class_name = ENG_NAME_TO_ZH[CornDiseaseDataset.get_class_name(predicted.item())]   
             
             results.append({
                 "filename": file.filename,
@@ -103,23 +110,8 @@ async def predict(files: List[UploadFile] = File(...)):
     
     return {"predictions": results}
 
-@app.post("/api/diagnosis_single")
-async def predict_single(file: UploadFile = File(...)):
-    """
-    对单个图像进行病虫害分类预测
-    
-    Args:
-        file (UploadFile): 上传的图像文件
-        
-    Returns:
-        Dict[str, Any]: 预测结果
-    """
-    # 为了简化，直接调用批量预测
-    return await predict([file])
-
 if __name__ == "__main__":
     # 初始化模型
     initialize_model()
     print("玉米病虫害识别API已启动")
-    print("访问 http://localhost:8000/docs 查看API文档")
-    uvicorn.run(app, host="localhost", port=8000)
+    uvicorn.run(app, host="localhost", port=8080)

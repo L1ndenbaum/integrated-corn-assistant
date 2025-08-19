@@ -28,13 +28,10 @@ func init() {
 }
 
 func main() {
-	// 设置为发布模式
 	gin.SetMode(gin.ReleaseMode)
-
-	// 创建gin引擎
 	router := gin.Default()
 
-	// 配置CORS
+	// CORS
 	router.Use(cors.New(cors.Config{
 		AllowOrigins: []string{
 			"http://101.43.131.195:4040",
@@ -51,24 +48,10 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("Failed to initialize database: %v", err))
 	}
-
-	// 打印数据库连接信息
 	fmt.Println("Database connected successfully")
 
-	// 注册路由
 	setupRoutes(router)
-
-	// 启动服务器
 	fmt.Println("Server starting on :8080")
-	// server := &http.Server{
-	// 	Addr:           ":8080",
-	// 	Handler:        router,
-	// 	ReadTimeout:    0, // disable read timeout
-	// 	WriteTimeout:   0, // disable write timeout (important for SSE)
-	// 	IdleTimeout:    0, // optional
-	// 	MaxHeaderBytes: 1 << 20,
-	// }
-	// server.ListenAndServe()
 	router.Run(":8080")
 }
 
@@ -94,6 +77,12 @@ func setupRoutes(router *gin.Engine) {
 	router.GET("/api/conversations/:conversation_id/history", GetChatHistory)
 	router.DELETE("/api/conversations/:conversation_id/delete", DeleteConversation)
 	router.POST("/api/file/upload", UploadFiles)
+
+	geoGroup := router.Group("/api/geo")
+	{
+		geoGroup.GET("/location", GetIPLocation)
+		geoGroup.GET("/weather", GetWeather)
+	}
 
 	// 静态文件服务
 	router.Static("/_next", filepath.Join(frontendStaticOutDir, "_next"))

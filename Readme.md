@@ -1,7 +1,7 @@
 ## Clone
 
 ```bash
-git clone https://github.com/L1ndenbaum/rag-based-llm-crop-chat.git
+git clone https://github.com/L1ndenbaum/integrated-corn-assistant.git
 ```
 
 ## Environment
@@ -10,6 +10,8 @@ git clone https://github.com/L1ndenbaum/rag-based-llm-crop-chat.git
 
 ```bash
 echo "export DIFY_API_KEY=your-dify-api-key" >> ~/.bashrc
+echo "export AMapKey=your-GaoDe-api-key" >> ~/.bashrc
+echo "export MySQLPassword=your-mysql-passwd" >> ~/.bashrc
 echo "export natappauthtoken=your-natapp-authtoken" >> ~/.bashrc
 source ~/.bashrc
 ```

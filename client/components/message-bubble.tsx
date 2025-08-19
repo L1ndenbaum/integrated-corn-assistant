@@ -213,7 +213,7 @@ export function MessageBubble({
           <Card className="p-4 bg-white border-gray-200 shadow-sm">
             <div className="flex items-center gap-2">
               <div className="w-2 h-4 bg-blue-500 animate-pulse rounded-sm"></div>
-              <span className="text-sm text-gray-500">玉米问答助手正在思考...</span>
+              <span className="text-sm text-gray-500">玉米智能助手正在思考...</span>
             </div>
           </Card>
         )}
