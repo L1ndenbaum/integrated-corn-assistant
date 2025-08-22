@@ -13,7 +13,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 app = FastAPI(title="玉米病虫害识别API", description="提供玉米病虫害图像分类服务")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 在生产环境中应更具体地指定
+    allow_origins=["http://101.43.131.195:4040", "http://38.60.251.79:8080"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -111,7 +111,6 @@ async def predict(files: List[UploadFile] = File(...)):
     return {"predictions": results}
 
 if __name__ == "__main__":
-    # 初始化模型
     initialize_model()
     print("玉米病虫害识别API已启动")
-    uvicorn.run(app, host="localhost", port=8080)
+    uvicorn.run(app, host="0.0.0.0", port=8080)

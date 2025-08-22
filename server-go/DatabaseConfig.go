@@ -24,9 +24,9 @@ type DatabaseConfig struct {
 // 获取数据库配置
 func GetDatabaseConfig() (*DatabaseConfig, error) {
 	config := &DatabaseConfig{
-		DBName:   "corn_db",
+		DBName:   "crop_chat_db",
 		DBAddr:   "localhost:3306",
-		Username: "lindenbaum",
+		Username: "root",
 		Password: os.Getenv("MySQLPassword"),
 	}
 

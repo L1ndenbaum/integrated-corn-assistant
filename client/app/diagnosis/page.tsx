@@ -149,25 +149,25 @@ export default function DiagnosisPage() {
     setError(null)
 
     try {
-      // const formData = new FormData()
-      // uploadedFiles.forEach((file) => {
-      //   formData.append("files", file)
-      // })
+      const formData = new FormData()
+      uploadedFiles.forEach((file) => {
+        formData.append("files", file)
+      })
 
-      // const diagnosisResponse = await fetch(`${API_BASE_URL}/api/diagnosis`, {
-      //   method: "POST",
-      //   body: formData,
-      // })
+      const diagnosisResponse = await fetch(`${API_BASE_URL}/api/diagnosis`, {
+        method: "POST",
+        body: formData,
+      })
 
-      // if (!diagnosisResponse.ok) {
-      //   throw new Error("诊断请求失败")
-      // }
+      if (!diagnosisResponse.ok) {
+        throw new Error("诊断请求失败")
+      }
 
-      // const diagnosisData = await diagnosisResponse.json()
+      const diagnosisData = await diagnosisResponse.json()
 
-      // setDiagnosisResults(diagnosisData.predictions || [])
-      await generateDiagnosisResponse([])//diagnosisData.predictions || 
-      // setIsDiagnosing(false)
+      setDiagnosisResults(diagnosisData.predictions || [])
+      setIsDiagnosing(false)
+      await generateDiagnosisResponse(diagnosisData.predictions || [])
     } catch (err) {
       setIsDiagnosing(false)
       setError("诊断过程中出现错误，请重试: " + (err as Error).message)
