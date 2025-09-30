@@ -483,54 +483,56 @@ export default function ChatbotPage() {
             </motion.div>
 
             {/* 消息区域 */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              className="flex-1 p-4"
-            >
-              <div className="max-w-4xl mx-auto space-y-4">
-                {messages.length === 0 ? (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="text-center text-gray-500 mt-20"
-                  >
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full overflow-hidden bg-gradient-to-br from-yellow-100 to-green-100 p-2">
-                      <img
-                        src="/images/corn-avatar.jpeg"
-                        alt="玉米问答助手"
-                        className="w-full h-full object-cover rounded-full"
-                      />
-                    </div>
-                    <p className="text-lg mb-2 text-gray-700">我是玉米问答助手</p>
-                    <p className="text-sm text-gray-600">有什么可以帮忙的😀？</p>
-                    <p className="text-xs text-gray-400 mt-2">💡 提示：可以直接拖拽图片到窗口中上传</p>
-                  </motion.div>
-                ) : (
-                  messages.map((message, index) => (
+            <ScrollArea className="flex-1 p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="flex-1 p-4"
+              >
+                <div className="max-w-4xl mx-auto space-y-4">
+                  {messages.length === 0 ? (
                     <motion.div
-                      key={index}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                      transition={{ duration: 0.3 }}
+                      className="text-center text-gray-500 mt-20"
                     >
-                      <MessageBubble
-                        key={index}
-                        message={message}
-                        isLoading={message.isStreaming}
-                        username={username}
-                        onQuestionSelect={handleQuestionSelect}
-                        showSuggestions={true}
-                        isLastMessage={index === messages.length - 1}
-                      />
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full overflow-hidden bg-gradient-to-br from-yellow-100 to-green-100 p-2">
+                        <img
+                          src="/images/corn-avatar.jpeg"
+                          alt="玉米问答助手"
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      </div>
+                      <p className="text-lg mb-2 text-gray-700">我是玉米问答助手</p>
+                      <p className="text-sm text-gray-600">有什么可以帮忙的😀？</p>
+                      <p className="text-xs text-gray-400 mt-2">💡 提示：可以直接拖拽图片到窗口中上传</p>
                     </motion.div>
-                  ))
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            </motion.div>
+                  ) : (
+                    messages.map((message, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                      >
+                        <MessageBubble
+                          key={index}
+                          message={message}
+                          isLoading={message.isStreaming}
+                          username={username}
+                          onQuestionSelect={handleQuestionSelect}
+                          showSuggestions={true}
+                          isLastMessage={index === messages.length - 1}
+                        />
+                      </motion.div>
+                    ))
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+              </motion.div>
+            </ScrollArea>
 
             {/* 输入区域 */}
             <motion.div
