@@ -52,6 +52,7 @@ export default function DiagnosisPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080"
+  const DIAGNOSIS_BASE_URL = process.env.NEXT_PUBLIC_DIAGNOSIS_BASE_URL || "http://localhost:8080"
 
   useEffect(() => {
     getLocation()
@@ -154,7 +155,7 @@ export default function DiagnosisPage() {
         formData.append("files", file)
       })
 
-      const diagnosisResponse = await fetch(`${API_BASE_URL}/api/diagnosis`, {
+      const diagnosisResponse = await fetch(`${DIAGNOSIS_BASE_URL}/api/diagnosis`, {
         method: "POST",
         body: formData,
       })
