@@ -13,12 +13,13 @@ TARGET_DIR="../server-go/static/out"
 if [ -d "$TARGET_DIR" ]; then
   echo "Removing old static files..."
   rm -rf "$TARGET_DIR"
-  mkdir -p "$TARGET_DIR"
+  mkdir -p "$TARGET_DIR/../avatars"
 else 
   echo "Target Dir do not exist, creating..."
   mkdir -p "$TARGET_DIR"
 fi
 
 mv out/* "$TARGET_DIR"
+cp "$TARGET_DIR/placeholder-user.jpg" "$TARGET_DIR/../avatars"
 rmdir out
 echo "Done! Static site is in $TARGET_DIR"

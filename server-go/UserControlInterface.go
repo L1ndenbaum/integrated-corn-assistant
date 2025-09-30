@@ -21,8 +21,10 @@ func RegisterUser(ctx *gin.Context) {
 
 	// 获取头像文件
 	file, _, err := ctx.Request.FormFile("avatar")
+	var avatarFileName string = ""
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "服务器获取用户头像错误"})
+		// 使用默认头像路径
+		avatarFileName = "placeholder-user.jpg"
 	}
 
 	if username == "" || password == "" {
@@ -58,7 +60,7 @@ func RegisterUser(ctx *gin.Context) {
 		defer file.Close()
 
 		// 生成头像文件名
-		avatarFileName := fmt.Sprintf("%s_%d%s", username, time.Now().Unix(), ".jpg")
+		avatarFileName = fmt.Sprintf("%s_%d%s", username, time.Now().Unix(), ".jpg")
 		avatarPath := filepath.Join("static", "avatars", avatarFileName)
 
 		// 确保头像目录存在
