@@ -62,16 +62,12 @@ export default function ChatbotPage() {
   }, [messages])
 
   useEffect(() => {
-    // 获取用户名
-    const storedUsername = localStorage.getItem("username")
-    if (storedUsername) {
+  const storedUsername = localStorage.getItem("username")
+  if (storedUsername) {
       setUsername(storedUsername)
-      // 在设置用户名后立即加载对话列表
-      loadConversations()
     }
   }, [])
 
-  // 添加一个新的 useEffect 来监听 username 变化
   useEffect(() => {
     if (username) {
       loadConversations()
