@@ -132,11 +132,9 @@ export default function DiagnosisPage() {
   }
 
   const handleFileUpload = (files: File[]) => {
-    if (files.length > 0) {
-      setUploadedFiles([files[files.length - 1]]) // 只保留最后选择的
-    }
+    if (!files || files.length === 0) return
+    setUploadedFiles((prev) => [...prev, ...files]) // 保持已有文件，加上新文件
   }
-
 
   const handleRemoveFile = (index: number) => {
     const newFiles = uploadedFiles.filter((_, i) => i !== index)
