@@ -131,9 +131,23 @@ export default function DiagnosisPage() {
     // sendMessageWithText(question)
   }
 
+  // 依据 name + size + lastModified 去重，并保持首次出现的顺序
+  const uniqFiles = (files: File[]) => {
+    const seen = new Set<string>()
+    const out: File[] = []
+    for (const f of files) {
+      const key = `${f.name}::${f.size}::${f.lastModified}`
+      if (!seen.has(key)) {
+        seen.add(key)
+        out.push(f)
+      }
+    }
+    return out
+  }
+
   const handleFileUpload = (files: File[]) => {
-    if (!files || files.length === 0) return
-    setUploadedFiles((prev) => [...prev, ...files]) // 保持已有文件，加上新文件
+    // 子组件回传的是“当前完整列表”，直接接管 + 去重
+    setUploadedFiles(uniqFiles(files))
   }
 
   const handleRemoveFile = (index: number) => {
@@ -152,8 +166,8 @@ export default function DiagnosisPage() {
 
     try {
       const formData = new FormData()
-      uploadedFiles.forEach((file) => {
-        formData.append("files", file)
+        uniqFiles(uploadedFiles).forEach((file) => {
+          formData.append("files", file)
       })
 
       const diagnosisResponse = await fetch(`${DIAGNOSIS_BASE_URL}/api/diagnosis`, {
