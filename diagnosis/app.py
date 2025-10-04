@@ -38,7 +38,14 @@ def initialize_model():
     
     # 加载训练好的模型权重
     try:
-        model.load_state_dict(torch.load(f'{BASE_DIR}/corn_disease_model_20250817_230202.pth'))
+        weight_file_path = None
+        for filename in sorted(os.listdir(BASE_DIR)):
+            if filename.endswith(".pth"):
+                weight_file_path = os.path.join(BASE_DIR, filename)
+        if weight_file_path:
+            model.load_state_dict(torch.load(weight_file_path))
+        else:
+            raise ValueError("权重文件不存在")
     except Exception as e:
         print(f"加载模型权重失败: {e}")
         print("继续使用随机初始化的模型")
