@@ -20,21 +20,25 @@ class CornDiseaseDataset(Dataset):
         3: "Rust"
     }
     
-    def __init__(self, root_dir=f"{current_dir}/data/PlantVillageCorn", transform=None, image_types=['Color', 'Segment']):
+    def __init__(self, root_dir=f"{current_dir}/data/PlantVillageCorn", transform=None, image_types=['color', 'segmented']):
         """
         初始化数据集
         
         Args:
             root_dir (str): 数据集根目录路径
             transform (callable, optional): 图像变换函数
-            data_type (str): 数据类型 ("Color", "Gray", "Segment")
+            data_type (str): 数据类型 ("color", "gray", "segmented")
         """
         self.root_dir = root_dir
         self.transform = transform
         self.image_types = image_types
         # 获取所有类别文件夹
-        self.classes = sorted([dir for dir in os.listdir(root_dir) 
-                              if os.path.isdir(os.path.join(root_dir, dir))])
+        self.classes = (
+            "CercosporaLeafSpot",
+            "Healthy", 
+            "NothernLeafBlight",
+            "Rust"
+        )
         
         # 创建标签映射
         self.class_to_idx = {cls_name: idx for idx, cls_name in enumerate(self.classes)}
@@ -45,7 +49,8 @@ class CornDiseaseDataset(Dataset):
         
         for class_name in self.classes:
             for image_type in image_types:
-                class_dir = os.path.join(root_dir, class_name, image_type)
+                class_dir = os.path.join(root_dir, image_type, class_name)
+                print(class_dir)
                 if not os.path.exists(class_dir):
                     continue
                     
