@@ -9,12 +9,18 @@ interface AuthGuardProps {
   children: React.ReactNode
 }
 
+const isAuthEnabled = process.env.NEXT_PUBLIC_ENABLE_AUTH_GUARD !== "false"
+
 export function AuthGuard({ children }: AuthGuardProps) {
-  const [isLoading, setIsLoading] = useState(true)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoading, setIsLoading] = useState(isAuthEnabled)
+  const [isAuthenticated, setIsAuthenticated] = useState(!isAuthEnabled)
   const router = useRouter()
 
   useLayoutEffect(() => {
+    if (!isAuthEnabled) {
+      return
+    }
+
     const token = document.cookie.split("; ").find(row => row.startsWith("auth_token="))
 
     if (token) {
@@ -26,6 +32,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
       router.replace(`/auth/login?returnUrl=${encodeURIComponent(currentPath)}`)
     }
   }, [router])
+
+  if (!isAuthEnabled) {
+    return <>{children}</>
+  }
 
   if (isLoading) {
     return (
