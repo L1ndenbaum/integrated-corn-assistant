@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -15,6 +15,7 @@ import { UserMenu } from "@/components/user-menu"
 import { DragDropZone } from "@/components/drag-drop-zone"
 import { motion } from 'framer-motion';
 import { useRouter } from "next/navigation";
+import { useStoredUsername } from "@/hooks/use-stored-username";
 
 interface Message {
   role: "user" | "assistant" // 消息归属方, 用户 或 AI助手
@@ -47,7 +48,7 @@ export default function ChatbotPage() {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [showSidebar, setShowSidebar] = useState(true)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
-  const [username, setUsername] = useState<string>("")
+  const storedUsername = useStoredUsername()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
@@ -61,32 +62,31 @@ export default function ChatbotPage() {
     scrollToBottom()
   }, [messages])
 
-  useEffect(() => {
-  const storedUsername = localStorage.getItem("username")
-  if (storedUsername) {
-      setUsername(storedUsername)
+  const loadConversations = useCallback(async () => {
+    if (!storedUsername) {
+      return
     }
-  }, [])
 
-  useEffect(() => {
-    if (username) {
-      loadConversations()
-    }
-  }, [username])
-
-  const loadConversations = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/conversations/list/${username}`)
+      const response = await fetch(`${API_BASE_URL}/api/conversations/list/${storedUsername}`)
       const data = await response.json()
       setConversations(data.conversations || [])
     } catch (error) {
       console.error("Failed to load conversations:", error)
     }
-  }
+  }, [API_BASE_URL, storedUsername])
+
+  useEffect(() => {
+    loadConversations()
+  }, [loadConversations])
 
   const loadConversation = async (conversationId: string) => {
+    if (!storedUsername) {
+      return
+    }
+
     try {
-      const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}/history?username=${username}`)
+      const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}/history?username=${storedUsername}`)
       const data = await response.json()
 
       // 将后端返回的数据转换为前端的 Message 格式
@@ -138,8 +138,12 @@ export default function ChatbotPage() {
   }
 
   const deleteConversation = async (conversationId: string) => {
+    if (!storedUsername) {
+      return
+    }
+
     try {
-      await fetch(`${API_BASE_URL}/api/conversations/${conversationId}/delete?username=${username}`, {
+      await fetch(`${API_BASE_URL}/api/conversations/${conversationId}/delete?username=${storedUsername}`, {
         method: "DELETE",
       })
       setConversations((prev) => prev.filter((conv) => conv.id !== conversationId))
@@ -172,7 +176,7 @@ export default function ChatbotPage() {
 
   // 处理拖拽上传的文件
   const handleDragDropUpload = async (files: File[]) => {
-    if (files.length === 0) return
+    if (files.length === 0 || !storedUsername) return
 
     try {
       // 创建FormData并上传文件
@@ -180,7 +184,7 @@ export default function ChatbotPage() {
       files.forEach((file) => {
         formData.append("files", file)
       })
-      formData.append("username", username)
+      formData.append("username", storedUsername)
       const response = await fetch(`${API_BASE_URL}/api/file/upload`, {
         method: "POST",
         body: formData,
@@ -220,6 +224,11 @@ export default function ChatbotPage() {
 
   // 发送消息的通用函数
   const sendMessageWithText = async (messageText: string) => {
+    if (!storedUsername) {
+      console.error("Username is required to send messages")
+      return
+    }
+
     if (!messageText.trim() && uploadedFiles.length === 0) return
 
     // 创建用户消息，包含上传的图片预览URLs
@@ -253,7 +262,7 @@ export default function ChatbotPage() {
         message: messageText,
         conversation_id: currentConversationId,
         file_ids: currentFiles.map((f) => f.fileId).filter((id) => id),
-        username: username, // 添加用户名字段
+        username: storedUsername, // 添加用户名字段
       }
 
       const response = await fetch(`${API_BASE_URL}/api/chat`, {
@@ -351,7 +360,7 @@ export default function ChatbotPage() {
         // 如果是新对话，可能需要更新当前对话信息
         if (!currentConversationId) {
           // 重新获取对话列表，找到新创建的对话
-          const updatedResponse = await fetch(`${API_BASE_URL}/api/conversations/list/${username}`)
+          const updatedResponse = await fetch(`${API_BASE_URL}/api/conversations/list/${storedUsername}`)
           const updatedData = await updatedResponse.json()
           const updatedConversations = updatedData.conversations || []
 
@@ -521,7 +530,7 @@ export default function ChatbotPage() {
                           key={index}
                           message={message}
                           isLoading={message.isStreaming}
-                          username={username}
+                          username={storedUsername ?? undefined}
                           onQuestionSelect={handleQuestionSelect}
                           showSuggestions={true}
                           isLastMessage={index === messages.length - 1}
