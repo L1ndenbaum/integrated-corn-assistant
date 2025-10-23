@@ -1,24 +1,34 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Loader2, MapPin, Cloud, Upload, Send, Home, RotateCcw, CheckCircle, AlertCircle } from "lucide-react"
+import {
+  Loader2,
+  MapPin,
+  Cloud,
+  Upload,
+  Send,
+  Home,
+  RotateCcw,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react"
 import { motion } from "framer-motion"
 import { ImageUploadDiagnosis } from "@/components/image-upload-diagnosis"
 import { MessageBubble } from "@/components/message-bubble"
 import { useRouter } from "next/navigation"
 import { AuthGuard } from "@/components/auth-guard"
+import { DragDropZone } from "@/components/drag-drop-zone"
 
 interface WeatherData {
-  location: string // x市, x省
-  temperature: string // 温度 单位摄氏度
-  weather: string // 天气现象 汉字描述
-  humidity: string // 空气湿度
-  wind: string // 风向 x级
+  location: string
+  temperature: string
+  weather: string
+  humidity: string
+  wind: string
 }
 
 interface DiagnosisResult {
@@ -36,8 +46,6 @@ interface Message {
 }
 
 export default function DiagnosisPage() {
-  const [input, setInput] = useState("")
-  const [location, setLocation] = useState<string>("")
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [isLoadingLocation, setIsLoadingLocation] = useState<boolean>(false)
   const [isLoadingWeather, setIsLoadingWeather] = useState<boolean>(false)
@@ -45,7 +53,6 @@ export default function DiagnosisPage() {
   const [isDiagnosing, setIsDiagnosing] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
-  const [mapCenter, setMapCenter] = useState<[number, number]>([39.9042, 116.4074])
   const [messages, setMessages] = useState<Message[]>([])
   const [isGeneratingResponse, setIsGeneratingResponse] = useState<boolean>(false)
   const [hasStartedDiagnosis, setHasStartedDiagnosis] = useState<boolean>(false)
@@ -58,15 +65,15 @@ export default function DiagnosisPage() {
     getLocation()
   }, [])
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+  }, [])
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [messages, scrollToBottom])
 
-  const getLocation = () => {
+  const getLocation = useCallback(() => {
     setIsLoadingLocation(true)
     setError(null)
 
@@ -74,13 +81,7 @@ export default function DiagnosisPage() {
       .then((response) => response.json())
       .then((data) => {
         if (data.status === "success") {
-          const lat = Number.parseFloat(data.city)
-          const lon = Number.parseFloat(data.rectangle)
-
-          setLocation(`${lat.toFixed(4)}, ${lon.toFixed(4)}`)
-          setMapCenter([lat, lon])
           setIsLoadingLocation(false)
-
           getWeatherInfo(data.adcode)
         } else {
           throw new Error(data.error || "位置信息获取失败")
@@ -91,7 +92,7 @@ export default function DiagnosisPage() {
         setError("无法获取您的位置信息，请手动输入位置或允许位置权限")
         console.error("获取位置失败:", err)
       })
-  }
+  }, [])
 
   const getWeatherInfo = async (cityAdcode: string) => {
     setIsLoadingWeather(true)
@@ -107,7 +108,7 @@ export default function DiagnosisPage() {
           temperature: liveWeather.temperature,
           weather: liveWeather.weather,
           humidity: liveWeather.humidity,
-          wind: liveWeather.wind
+          wind: liveWeather.wind,
         }
 
         setWeather(weatherData)
@@ -123,37 +124,37 @@ export default function DiagnosisPage() {
       throw err
     }
   }
-  
-  // 处理推荐问题选择
-  const handleQuestionSelect = (question: string) => {
-    setInput(question)
-    // 可以选择自动发送或让用户确认
-    // sendMessageWithText(question)
-  }
 
-  // 依据 name + size + lastModified 去重，并保持首次出现的顺序
   const uniqFiles = (files: File[]) => {
     const seen = new Set<string>()
-    const out: File[] = []
-    for (const f of files) {
-      const key = `${f.name}::${f.size}::${f.lastModified}`
+    const deduped: File[] = []
+
+    for (const file of files) {
+      const key = `${file.name}::${file.size}::${file.lastModified}`
       if (!seen.has(key)) {
         seen.add(key)
-        out.push(f)
+        deduped.push(file)
       }
     }
-    return out
+
+    return deduped
   }
 
-  const handleFileUpload = (files: File[]) => {
-    // 子组件回传的是“当前完整列表”，直接接管 + 去重
+  const handleFileUpload = useCallback((files: File[]) => {
     setUploadedFiles(uniqFiles(files))
-  }
+  }, [])
 
   const handleRemoveFile = (index: number) => {
-    const newFiles = uploadedFiles.filter((_, i) => i !== index)
-    setUploadedFiles(newFiles)
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index))
   }
+
+  const handleDragDropUpload = useCallback((files: File[]) => {
+    if (files.length === 0) {
+      return
+    }
+
+    setUploadedFiles((prev) => uniqFiles([...prev, ...files]))
+  }, [])
 
   const startDiagnosis = async () => {
     if (uploadedFiles.length === 0) {
@@ -166,8 +167,8 @@ export default function DiagnosisPage() {
 
     try {
       const formData = new FormData()
-        uniqFiles(uploadedFiles).forEach((file) => {
-          formData.append("files", file)
+      uniqFiles(uploadedFiles).forEach((file) => {
+        formData.append("files", file)
       })
 
       const diagnosisResponse = await fetch(`${DIAGNOSIS_BASE_URL}/api/diagnosis`, {
@@ -219,13 +220,13 @@ export default function DiagnosisPage() {
 
       当前环境信息：
       ${
-        weather ? 
-          `- 位置：${weather.location}
+        weather
+          ? `- 位置：${weather.location}
           - 温度：${weather.temperature}°C
           - 天气：${weather.weather}
           - 湿度：${weather.humidity}
           - 风向和风速：${weather.wind}`
-                : "- 环境信息暂不可用"
+          : "- 环境信息暂不可用"
       }
 
       请提供：
@@ -251,7 +252,7 @@ export default function DiagnosisPage() {
         },
         body: JSON.stringify({
           message: diagnosisContext,
-          username: "____FORDIAGNOSIS____"
+          username: "____FORDIAGNOSIS____",
         }),
       })
 
@@ -285,15 +286,12 @@ export default function DiagnosisPage() {
             break
           }
 
-          // 检查并提取messageId，但不将其添加到显示内容中
           if (chunk.includes("[MESSAGE_ID:")) {
             const match = chunk.match(/\[MESSAGE_ID:([^\]]+)\]/)
             if (match) {
-              // 从chunk中移除MESSAGE_ID标记，避免显示在消息内容中
               chunk = chunk.replace(/\[MESSAGE_ID:[^\]]+\]/g, "")
             }
           }
-
 
           if (chunk.trim()) {
             accumulatedContent += chunk
@@ -341,303 +339,290 @@ export default function DiagnosisPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100">
-        <div className="flex h-screen">
-          <div className="w-full lg:w-1/2 p-4 md:p-8 overflow-y-auto">
+      <DragDropZone onFilesDropped={handleDragDropUpload} disabled={isDiagnosing || isGeneratingResponse}>
+        <div className="flex h-screen bg-gray-50">
+          <div className="w-full lg:w-[420px] bg-white border-r border-gray-200 flex flex-col">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="max-w-2xl mx-auto"
+              transition={{ duration: 0.3 }}
+              className="p-6 border-b border-gray-200"
             >
-              <div className="text-center mb-8">
-                <h1 className="text-3xl md:text-4xl font-bold text-emerald-800 mb-2">玉米病虫害诊断</h1>
-                <p className="text-emerald-600">上传玉米图片，获取专业的病虫害诊断结果</p>
-              </div>
+              <h1 className="text-xl font-semibold text-gray-900">玉米病虫害诊断</h1>
+              <p className="mt-2 text-sm text-gray-600">上传玉米图片，结合当前位置天气信息生成专业诊断建议。</p>
+            </motion.div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                >
-                  <Card className="shadow-lg border-emerald-200">
+            <ScrollArea className="flex-1">
+              <div className="p-6 space-y-4">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
+                  <Card className="border-gray-200">
                     <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-sm text-emerald-800">
-                        <MapPin className="w-4 h-4" />
+                      <CardTitle className="flex items-center gap-2 text-sm text-gray-900">
+                        <MapPin className="w-4 h-4 text-emerald-600" />
                         位置信息
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-0">
                       {isLoadingLocation ? (
-                        <div className="flex items-center justify-center py-4">
-                          <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
-                          <span className="ml-2 text-sm text-emerald-700">获取位置中...</span>
+                        <div className="flex items-center justify-center py-4 text-sm text-gray-600">
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin text-emerald-600" />
+                          正在获取位置信息...
                         </div>
                       ) : weather ? (
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center text-sm">
-                            <span className="text-emerald-600">地点:</span>
-                            <span className="font-medium text-emerald-800">{weather.location}</span>
-                          </div>
+                        <div className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm">
+                          <span className="text-gray-600">地点</span>
+                          <span className="font-medium text-gray-900">{weather.location}</span>
                         </div>
                       ) : (
-                        <p className="text-emerald-500 text-center py-4 text-sm">位置信息获取中...</p>
+                        <p className="py-4 text-center text-sm text-gray-500">位置信息暂不可用，请稍后重试。</p>
                       )}
                     </CardContent>
                   </Card>
                 </motion.div>
 
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
-                >
-                  <Card className="shadow-lg border-emerald-200">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.15 }}>
+                  <Card className="border-gray-200">
                     <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-sm text-emerald-800">
-                        <Cloud className="w-4 h-4" />
+                      <CardTitle className="flex items-center gap-2 text-sm text-gray-900">
+                        <Cloud className="w-4 h-4 text-emerald-600" />
                         天气信息
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="pt-0">
+                    <CardContent className="pt-0 space-y-2 text-sm">
                       {isLoadingWeather ? (
-                        <div className="flex items-center justify-center py-4">
-                          <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
-                          <span className="ml-2 text-sm text-emerald-700">获取天气中...</span>
+                        <div className="flex items-center justify-center py-4 text-sm text-gray-600">
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin text-emerald-600" />
+                          正在获取天气信息...
                         </div>
                       ) : weather ? (
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center text-sm">
-                            <span className="text-emerald-600">温度:</span>
-                            <span className="font-medium text-emerald-800">{weather.temperature}°C</span>
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-600">温度</span>
+                            <span className="font-medium text-gray-900">{weather.temperature}°C</span>
                           </div>
-                          <div className="flex justify-between items-center text-sm">
-                            <span className="text-emerald-600">天气状况:</span>
-                            <span className="font-medium text-emerald-800">{weather.weather}</span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-600">天气状况</span>
+                            <span className="font-medium text-gray-900">{weather.weather}</span>
                           </div>
-                          <div className="flex justify-between items-center text-sm">
-                            <span className="text-emerald-600">湿度:</span>
-                            <span className="font-medium text-emerald-800">{weather.humidity}</span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-600">湿度</span>
+                            <span className="font-medium text-gray-900">{weather.humidity}</span>
                           </div>
-                          <div className="flex justify-between items-center text-sm">
-                            <span className="text-emerald-600">风向和风速:</span>
-                            <span className="font-medium text-emerald-800">{weather.wind}</span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-600">风向/风速</span>
+                            <span className="font-medium text-gray-900">{weather.wind}</span>
                           </div>
-                        </div>
+                        </>
                       ) : (
-                        <p className="text-emerald-500 text-center py-4 text-sm">天气信息获取中...</p>
+                        <p className="py-4 text-center text-sm text-gray-500">天气信息暂不可用，请稍后重试。</p>
                       )}
                     </CardContent>
                   </Card>
                 </motion.div>
+
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.2 }}>
+                  <Card className="border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-gray-900">
+                        <Upload className="h-4 w-4 text-emerald-600" />
+                        上传玉米图片
+                      </CardTitle>
+                      <CardDescription>支持拖拽或点击上传，最多可选择 10 张图片。</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <ImageUploadDiagnosis
+                        onUpload={handleFileUpload}
+                        uploadedFiles={uploadedFiles}
+                        onRemoveFile={handleRemoveFile}
+                        disabled={isDiagnosing || isGeneratingResponse}
+                      />
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.2 }}
+                        className="rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-600"
+                      >
+                        💡 建议上传光线充足、清晰的叶片照片，以提高诊断准确度。
+                      </motion.div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                {error && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+                    <Alert variant="destructive">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  </motion.div>
+                )}
               </div>
+            </ScrollArea>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-              >
-                <Card className="shadow-lg border-emerald-200">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-emerald-800">
-                      <Upload className="w-5 h-5" />
-                      图片诊断
-                    </CardTitle>
-                    <CardDescription className="text-emerald-600">上传玉米图片进行病虫害诊断</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {error && (
-                      <Alert variant="destructive" className="mb-4">
-                        <AlertDescription>{error}</AlertDescription>
-                      </Alert>
-                    )}
+            <div className="border-t border-gray-200 p-6">
+              <div className="flex flex-col gap-3">
+                <Button
+                  onClick={hasStartedDiagnosis ? continueDiagnosis : startDiagnosis}
+                  disabled={
+                    isDiagnosing ||
+                    isGeneratingResponse ||
+                    (!hasStartedDiagnosis && uploadedFiles.length === 0)
+                  }
+                  className={`w-full justify-center gap-2 ${
+                    hasStartedDiagnosis ? "bg-white text-gray-900 hover:bg-gray-100" : ""
+                  }`}
+                  variant={hasStartedDiagnosis ? "outline" : "default"}
+                >
+                  {hasStartedDiagnosis ? (
+                    <>
+                      <RotateCcw className="h-4 w-4" />
+                      继续诊断
+                    </>
+                  ) : isDiagnosing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      诊断中...
+                    </>
+                  ) : isGeneratingResponse ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      生成诊断建议中...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      开始诊断
+                    </>
+                  )}
+                </Button>
 
-                    <div className="space-y-6">
-                      <div>
-                        <Label className="mb-2 block text-emerald-800">选择玉米图片</Label>
-                        <ImageUploadDiagnosis
-                          onUpload={handleFileUpload}
-                          uploadedFiles={uploadedFiles}
-                          onRemoveFile={handleRemoveFile}
-                        />
-                      </div>
-
-                      <div className="flex gap-3">
-                        {!hasStartedDiagnosis ? (
-                          <Button
-                            onClick={startDiagnosis}
-                            disabled={isDiagnosing || uploadedFiles.length === 0}
-                            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700"
-                          >
-                            {isDiagnosing ? (
-                              <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                诊断中...
-                              </>
-                            ) : (
-                              <>
-                                <Send className="w-4 h-4" />
-                                开始诊断
-                              </>
-                            )}
-                          </Button>
-                        ) : (
-                          <Button
-                            onClick={continueDiagnosis}
-                            variant="outline"
-                            className="flex items-center gap-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50 bg-transparent"
-                          >
-                            <RotateCcw className="w-4 h-4" />
-                            继续诊断
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </motion.div>
+                <Button
+                  onClick={getLocation}
+                  variant="ghost"
+                  className="w-full justify-center text-sm text-gray-600 hover:text-gray-900"
+                  disabled={isLoadingLocation}
+                >
+                  {isLoadingLocation ? (
+                    <>
+                      <Loader2 className="mr-1 h-4 w-4 animate-spin" /> 刷新定位中...
+                    </>
+                  ) : (
+                    "重新获取位置信息"
+                  )}
+                </Button>
+              </div>
+            </div>
           </div>
 
-          <div className="hidden lg:flex lg:w-1/2 flex-col bg-gradient-to-br from-emerald-50 to-green-100 border-l border-emerald-200">
+          <div className="hidden lg:flex flex-1 flex-col">
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              className="bg-gradient-to-r from-emerald-600 to-green-600 text-white p-4 flex items-center justify-between round-lg"
+              className="flex items-center justify-between border-b border-gray-200 bg-white p-4"
             >
               <div className="flex items-center gap-3">
-                <h1 className="text-lg font-semibold">诊断建议</h1>
+                <h2 className="text-lg font-semibold text-gray-900">诊断建议</h2>
               </div>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              className="flex-1 overflow-hidden"
-            >
-              <ScrollArea className="h-full">
-                <div className="p-4 space-y-4">
-                  {diagnosisResults.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5 }}
-                      className="space-y-3"
-                    >
-                      <h3 className="font-semibold text-emerald-800 border-b border-emerald-200 pb-2">图片诊断结果</h3>
-                      {diagnosisResults.map((result, index) => (
-                        <motion.div
-                          key={index}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.3, delay: index * 0.1 }}
-                          className="bg-white rounded-lg p-4 border border-emerald-200 shadow-sm"
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <h4 className="font-medium text-emerald-800 text-sm truncate flex-1">{result.filename}</h4>
-                            <span className="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded ml-2">
+            <ScrollArea className="flex-1">
+              <div className="p-6 space-y-4">
+                {diagnosisResults.length > 0 && (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+                    <Card className="border-gray-200">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base text-gray-900">图片诊断结果</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {diagnosisResults.map((result, index) => (
+                          <motion.div
+                            key={`${result.filename}-${index}`}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.2, delay: index * 0.05 }}
+                            className="flex items-start justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm"
+                          >
+                            <div className="flex-1 pr-3">
+                              <p className="truncate text-sm font-medium text-gray-900">{result.filename}</p>
+                              <div className="mt-1 flex items-center gap-2 text-sm">
+                                {result.predicted_class === "健康" ? (
+                                  <CheckCircle className="h-4 w-4 text-emerald-600" />
+                                ) : (
+                                  <AlertCircle className="h-4 w-4 text-amber-500" />
+                                )}
+                                <span className="font-semibold text-gray-900">{result.predicted_class}</span>
+                              </div>
+                            </div>
+                            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600">
                               {(result.confidence * 100).toFixed(1)}%
                             </span>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            {result.predicted_class === "健康" ? (
-                              <CheckCircle className="w-4 h-4 text-green-500" />
-                            ) : (
-                              <AlertCircle className="w-4 h-4 text-orange-500" />
-                            )}
-                            <span className="font-semibold text-emerald-700">{result.predicted_class}</span>
-                          </div>
-                        </motion.div>
-                      ))}
-
-                      <div className="border-t border-emerald-200 pt-4">
-                        <h3 className="font-semibold text-emerald-800 mb-3">AI 专业建议</h3>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex-1 p-4"
-                  >
-                    <div className="max-w-4xl mx-auto space-y-4">
-                      {messages.length === 0 ? (
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3 }}
-                          className="text-center text-gray-500 mt-20"
-                        >
-                          <div className="w-16 h-16 mx-auto mb-4 rounded-full overflow-hidden bg-gradient-to-br from-yellow-100 to-green-100 p-2">
-                            <img
-                              src="/images/corn-avatar.jpeg"
-                              alt="玉米智能助手"
-                              className="w-full h-full object-cover rounded-full"
-                            />
-                          </div>
-                          <p className="text-lg mb-2 text-gray-700">我是玉米诊断助手</p>
-                          <p className="text-sm text-gray-600">有什么可以帮忙的😀？</p>
-                          <p className="text-xs text-gray-400 mt-2">💡 提示：可以直接拖拽图片到窗口中上传</p>
-                        </motion.div>
-                      ) : (
-                        messages.map((message, index) => (
-                          <motion.div
-                            key={index}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3, delay: index * 0.05 }}
-                          >
-                            <MessageBubble
-                              key={index}
-                              message={message}
-                              isLoading={message.isStreaming}
-                              username={"____FORDIAGNOSIS____"}
-                              onQuestionSelect={handleQuestionSelect}
-                              showSuggestions={false}
-                              isLastMessage={index === messages.length - 1}
-                            />
                           </motion.div>
-                        ))
-                      )}
-                      <div ref={messagesEndRef} />
-                    </div>
+                        ))}
+                      </CardContent>
+                    </Card>
                   </motion.div>
-                  <div ref={messagesEndRef} />
-                </div>
-              </ScrollArea>
-            </motion.div>
+                )}
+
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.05 }}>
+                  <Card className="border-gray-200">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base text-gray-900">AI 专业建议</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {messages.length === 0 ? (
+                          <div className="text-center text-gray-500">
+                            <div className="mx-auto mb-4 h-16 w-16 overflow-hidden rounded-full bg-gradient-to-br from-yellow-100 to-green-100 p-2">
+                              <img
+                                src="/images/corn-avatar.jpeg"
+                                alt="玉米诊断助手"
+                                className="h-full w-full rounded-full object-cover"
+                              />
+                            </div>
+                            <p className="text-base text-gray-700">我是玉米诊断助手</p>
+                            <p className="mt-1 text-sm text-gray-600">上传图片后，我会为您生成诊断分析与建议。</p>
+                          </div>
+                        ) : (
+                          messages.map((message, index) => (
+                            <motion.div
+                              key={`${message.timestamp}-${index}`}
+                              initial={{ opacity: 0, y: 8 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.2, delay: index * 0.05 }}
+                            >
+                              <MessageBubble
+                                message={message}
+                                isLoading={message.isStreaming}
+                                username={"____FORDIAGNOSIS____"}
+                                showSuggestions={false}
+                                isLastMessage={index === messages.length - 1}
+                              />
+                            </motion.div>
+                          ))
+                        )}
+                        <div ref={messagesEndRef} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </div>
+            </ScrollArea>
           </div>
+
+          <motion.button
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => router.push("/")}
+            className="fixed bottom-6 left-6 rounded-full bg-emerald-600 p-3 text-white shadow-lg transition-all duration-150 hover:bg-emerald-700"
+            aria-label="返回主页"
+          >
+            <Home className="h-6 w-6" />
+          </motion.button>
         </div>
-
-        <motion.button
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3, delay: 0.5 }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={() => router.push("/")}
-          className="fixed bottom-6 left-6 bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-full shadow-lg z-10 active:scale-95 transition-all duration-150"
-          aria-label="返回主页"
-        >
-          <Home className="w-6 h-6" />
-        </motion.button>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 1 }}
-          className="fixed bottom-4 right-4 text-center text-gray-600 text-xs bg-white/80 backdrop-blur-sm rounded-lg p-2 shadow-sm"
-        >
-          <p>© 2025 玉米智能助手</p>
-          <p className="mt-1">准确率基于深度学习模型，仅供参考</p>
-        </motion.div>
-      </div>
+      </DragDropZone>
     </AuthGuard>
   )
 }
