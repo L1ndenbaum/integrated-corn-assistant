@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 
-import { AuthGuard } from "@/components/auth-guard";
+import { AuthGuard } from "@/components/common/auth/auth-guard";
 import { UserAvatarSection } from "@/components/dashboard/user-avatar-section";
 import { PasswordSection } from "@/components/dashboard/password-section";
 import { ProfileInfoCard } from "@/components/dashboard/profile-info-card";
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { useUserProfile } from "@/hooks/use-user-profile";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { profile, username, isLoadingProfile, error, setError, changePassword, updateAvatar } = useUserProfile();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSavingAvatar, setIsSavingAvatar] = useState(false);
@@ -78,8 +80,8 @@ export default function DashboardPage() {
 
   const handleRetry = useCallback(() => {
     clearMessages();
-    window.location.reload();
-  }, [clearMessages]);
+    router.refresh();
+  }, [clearMessages, router]);
 
   const registrationTime = useMemo(() => {
     if (!profile) {
@@ -113,7 +115,7 @@ export default function DashboardPage() {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
           <div className="flex gap-3">
-            <Button onClick={() => (window.location.href = "/auth/login")} className="flex-1">
+            <Button onClick={() => router.push("/auth/login")} className="flex-1">
               返回登录页面
             </Button>
             <Button variant="outline" onClick={handleRetry} className="flex-1">

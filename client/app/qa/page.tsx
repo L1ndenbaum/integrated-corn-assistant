@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Menu, Send, Plus, X, Home } from "lucide-react"
-import { MessageBubble } from "@/components/message-bubble"
-import { ConversationList } from "@/components/conversation-list"
-import { ImageUpload } from "@/components/image-upload"
-import { AuthGuard } from "@/components/auth-guard"
-import { UserMenu } from "@/components/user-menu"
-import { DragDropZone } from "@/components/drag-drop-zone"
+import { MessageBubble } from "@/components/common/chat/message-bubble"
+import { ConversationList } from "@/components/qa/conversation-list"
+import { ImageUpload } from "@/components/qa/image-upload"
+import { AuthGuard } from "@/components/common/auth/auth-guard"
+import { UserMenu } from "@/components/common/navigation/user-menu"
+import { DragDropZone } from "@/components/common/upload/drag-drop-zone"
 import { motion } from 'framer-motion';
 import { useRouter } from "next/navigation";
 import { useStoredUsername } from "@/hooks/use-stored-username";

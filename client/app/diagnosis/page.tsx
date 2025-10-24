@@ -17,11 +17,11 @@ import {
   AlertCircle,
 } from "lucide-react"
 import { motion } from "framer-motion"
-import { ImageUploadDiagnosis } from "@/components/image-upload-diagnosis"
-import { MessageBubble } from "@/components/message-bubble"
+import { ImageUploadDiagnosis } from "@/components/diagnosis/image-upload"
+import { MessageBubble } from "@/components/common/chat/message-bubble"
 import { useRouter } from "next/navigation"
-import { AuthGuard } from "@/components/auth-guard"
-import { DragDropZone } from "@/components/drag-drop-zone"
+import { AuthGuard } from "@/components/common/auth/auth-guard"
+import { DragDropZone } from "@/components/common/upload/drag-drop-zone"
 
 interface WeatherData {
   location: string
