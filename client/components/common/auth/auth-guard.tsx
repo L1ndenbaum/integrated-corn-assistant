@@ -15,23 +15,49 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const [isLoading, setIsLoading] = useState(isAuthEnabled)
   const [isAuthenticated, setIsAuthenticated] = useState(!isAuthEnabled)
   const router = useRouter()
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || ""
 
   useLayoutEffect(() => {
     if (!isAuthEnabled) {
       return
     }
 
-    const token = document.cookie.split("; ").find(row => row.startsWith("auth_token="))
+    let isActive = true
+    const currentPath = window.location.pathname + window.location.search
 
-    if (token) {
-      setIsAuthenticated(true)
+    const verifySession = async () => {
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/v1/auth/session`, {
+          credentials: "include",
+        })
+
+        if (!isActive) {
+          return
+        }
+
+        if (response.ok) {
+          setIsAuthenticated(true)
+          setIsLoading(false)
+          return
+        }
+      } catch (error) {
+        if (!isActive) {
+          return
+        }
+      }
+
+      setIsAuthenticated(false)
       setIsLoading(false)
-    } else {
-      const currentPath = window.location.pathname + window.location.search
       // 用 replace 避免污染历史记录
       router.replace(`/auth/login?returnUrl=${encodeURIComponent(currentPath)}`)
     }
-  }, [router])
+
+    verifySession()
+
+    return () => {
+      isActive = false
+    }
+  }, [apiBaseUrl, router])
 
   if (!isAuthEnabled) {
     return <>{children}</>

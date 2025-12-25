@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: user-service
+    labels:
+        app: user-service
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: user-service
+    template:
+        metadata:
+            labels:
+                app: user-service
+        spec:
+            containers:
+                - name: user-service
+                  image: YOUR_DOCKERHUB_USER/corn-assistant-user:latest
+                  ports:
+                      - containerPort: 8081
+                  env:
+                      - name: PORT
+                        value: "8081"
+                      - name: USER_DB_DSN
+                        valueFrom:
+                            secretKeyRef:
+                                name: corn-assistant-secrets
+                                key: user_db_dsn
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: user-service
+    labels:
+        app: user-service
+spec:
+    selector:
+        app: user-service
+    ports:
+        - name: http
+          port: 8081
+          targetPort: 8081

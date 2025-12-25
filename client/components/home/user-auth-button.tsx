@@ -20,16 +20,54 @@ export function UserAuthButton() {
   const [showDropdown, setShowDropdown] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || ""
 
   useEffect(() => {
-    const token = document.cookie.split("; ").find((row) => row.startsWith("auth_token="))
-    if (token) {
-      setIsLoggedIn(true)
-      const storedAvatar = localStorage.getItem("user_avatar")
-      setAvatar(storedAvatar || "/placeholder-user.jpg")
-    } else {
+    let isActive = true
+
+    const storedAvatar = localStorage.getItem("user_avatar")
+    if (storedAvatar) {
+      setAvatar(storedAvatar)
+    }
+
+    const loadSession = async () => {
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/v1/auth/session`, {
+          credentials: "include",
+        })
+
+        if (!isActive) {
+          return
+        }
+
+        if (response.ok) {
+          const data = await response.json().catch(() => null)
+          const username = data?.user?.username || localStorage.getItem("username")
+          const avatarPath = data?.user?.avatar_path || storedAvatar
+
+          if (username) {
+            localStorage.setItem("username", username)
+          }
+          if (avatarPath) {
+            localStorage.setItem("user_avatar", avatarPath)
+            setAvatar(avatarPath)
+          } else {
+            setAvatar("/placeholder-user.jpg")
+          }
+
+          setIsLoggedIn(true)
+          return
+        }
+      } catch (error) {
+        if (!isActive) {
+          return
+        }
+      }
+
       setIsLoggedIn(false)
     }
+
+    loadSession()
 
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -39,9 +77,10 @@ export function UserAuthButton() {
 
     document.addEventListener("mousedown", handleClickOutside)
     return () => {
+      isActive = false
       document.removeEventListener("mousedown", handleClickOutside)
     }
-  }, [])
+  }, [apiBaseUrl])
 
   const handleDashboardNavigate = () => {
     setShowDropdown(false)
@@ -49,7 +88,6 @@ export function UserAuthButton() {
   }
 
   const handleLogout = () => {
-    document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
     localStorage.removeItem("username")
     localStorage.removeItem("user_avatar")
     setIsLoggedIn(false)

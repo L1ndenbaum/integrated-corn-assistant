@@ -18,25 +18,65 @@ export function UserMenu() {
   const [username, setUsername] = useState<string | null>(null)
   const [avatar, setAvatar] = useState<string | null>(null)
   const router = useRouter()
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || ""
 
   useEffect(() => {
-    // 从cookie中获取用户信息
-    const token = document.cookie.split('; ').find(row => row.startsWith('auth_token='))
-    if (token) {
-      // 这里应该调用API获取用户详细信息，包括头像
-      // 为了简化，我们先从localStorage获取用户名（实际应用中应该从API获取）
-      const storedUsername = localStorage.getItem("username")
+    let isActive = true
+    const storedUsername = localStorage.getItem("username")
+    const storedAvatar = localStorage.getItem("user_avatar")
+
+    if (storedUsername) {
       setUsername(storedUsername)
-      
-      // 如果有头像信息，也获取它
-      const storedAvatar = localStorage.getItem("user_avatar")
+    }
+    if (storedAvatar) {
       setAvatar(storedAvatar)
     }
-  }, [])
+
+    const loadSession = async () => {
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/v1/auth/session`, {
+          credentials: "include",
+        })
+
+        if (!isActive) {
+          return
+        }
+
+        if (response.ok) {
+          const data = await response.json().catch(() => null)
+          const resolvedUsername = data?.user?.username || storedUsername
+          const resolvedAvatar = data?.user?.avatar_path || storedAvatar
+
+          if (resolvedUsername) {
+            localStorage.setItem("username", resolvedUsername)
+            setUsername(resolvedUsername)
+          }
+
+          if (resolvedAvatar) {
+            localStorage.setItem("user_avatar", resolvedAvatar)
+            setAvatar(resolvedAvatar)
+          }
+          return
+        }
+      } catch (error) {
+        if (!isActive) {
+          return
+        }
+      }
+
+      setUsername(null)
+      setAvatar(null)
+    }
+
+    loadSession()
+
+    return () => {
+      isActive = false
+    }
+  }, [apiBaseUrl])
 
   const handleLogout = () => {
-    // 清除所有用户相关的cookie和localStorage
-    document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
+    // 清除所有用户相关的localStorage
     localStorage.removeItem("username")
     localStorage.removeItem("user_avatar")
     router.push("/auth/login")

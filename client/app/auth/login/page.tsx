@@ -9,11 +9,21 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Loader2 } from "lucide-react"
 import Link from "next/link"
 
+type LoginMethod = "username" | "email" | "phone"
+
 export default function LoginPage() {
-  const [username, setUsername] = useState("")
+  const [loginMethod, setLoginMethod] = useState<LoginMethod>("username")
+  const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -21,25 +31,53 @@ export default function LoginPage() {
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080"
 
+  const resolveLoginRequest = (value: string) => {
+    if (loginMethod === "email") {
+      return {
+        path: "/api/v1/auth/login/email",
+        payload: { email: value },
+      }
+    }
+
+    if (loginMethod === "phone") {
+      return {
+        path: "/api/v1/auth/login/phone",
+        payload: { phone: value },
+      }
+    }
+
+    return {
+      path: "/api/v1/auth/login/username",
+      payload: { username: value },
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
 
-    if (!username.trim() || !password.trim()) {
-      setError("请输入用户名和密码")
+    if (!identifier.trim() || !password.trim()) {
+      setError("请输入用户名/邮箱/手机号和密码")
+      return
+    }
+
+    if (loginMethod !== "username") {
+      setError("当前仅支持用户名登录")
       return
     }
 
     setIsLoading(true)
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/user/login`, {
+      const login = resolveLoginRequest(identifier.trim())
+      const response = await fetch(`${API_BASE_URL}${login.path}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
-          username: username.trim(),
+          ...login.payload,
           password: password,
         }),
       })
@@ -47,31 +85,18 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (response.ok) {
-        // 登录成功，保存用户名到localStorage
-        localStorage.setItem("username", username.trim())
-        
-        // 设置认证cookie
-        document.cookie = "auth_token=true; path=/; max-age=3600";
-        
-        // 获取用户信息并存储头像
-        try {
-          const userInfoResponse = await fetch(`${API_BASE_URL}/api/user/info/${username.trim()}`)
-          const userInfoData = await userInfoResponse.json()
-          
-          if (userInfoResponse.ok && userInfoData.data) {
-            // 存储用户头像信息
-            if (userInfoData.data.avatar) {
-              localStorage.setItem("user_avatar", userInfoData.data.avatar)
-            }
-          }
-        } catch (userInfoError) {
-          console.error("获取用户信息失败:", userInfoError)
-          // 即使获取用户信息失败，也允许用户登录
+        const resolvedUsername =
+          data?.user?.username || data?.username || identifier.trim()
+
+        localStorage.setItem("username", resolvedUsername)
+
+        if (data?.user?.avatar_path) {
+          localStorage.setItem("user_avatar", data.user.avatar_path)
         }
         
         // 获取返回URL，如果没有则默认跳转到主页
-        const returnUrl = new URLSearchParams(window.location.search).get('returnUrl') || "/";
-        router.push(returnUrl);
+        const returnUrl = new URLSearchParams(window.location.search).get("returnUrl") || "/"
+        router.push(returnUrl)
       } else {
         setError(data.message || "登录失败")
       }
@@ -112,13 +137,35 @@ export default function LoginPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="username">用户名</Label>
+                <Label htmlFor="loginMethod">登录方式</Label>
+                <Select value={loginMethod} onValueChange={(value) => setLoginMethod(value as LoginMethod)}>
+                  <SelectTrigger id="loginMethod">
+                    <SelectValue placeholder="请选择登录方式" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="username">用户名登录</SelectItem>
+                    <SelectItem value="email">邮箱登录（暂未开放）</SelectItem>
+                    <SelectItem value="phone">手机登录（暂未开放）</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="identifier">
+                  {loginMethod === "email" ? "邮箱" : loginMethod === "phone" ? "手机号" : "用户名"}
+                </Label>
                 <Input
-                  id="username"
+                  id="identifier"
                   type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="请输入用户名"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder={
+                    loginMethod === "email"
+                      ? "请输入邮箱"
+                      : loginMethod === "phone"
+                        ? "请输入手机号"
+                        : "请输入用户名"
+                  }
                   disabled={isLoading}
                   required
                 />

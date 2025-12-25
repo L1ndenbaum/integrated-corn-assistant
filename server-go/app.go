@@ -57,6 +57,15 @@ func main() {
 
 // setupRoutes 设置路由
 func setupRoutes(router *gin.Engine) {
+	authProxyURL := getEnvOrDefault("AUTH_SERVICE_BASE_URL", "http://localhost:8082")
+	authProxy, err := newReverseProxy(authProxyURL)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create auth proxy: %v", err))
+	}
+
+	// Auth-service proxy (external API)
+	router.Any("/api/v1/auth/*path", proxyHandler(authProxy))
+
 	// 用户控制接口
 	router.POST("/api/user/register", RegisterUser)
 	router.POST("/api/user/login", LoginUser)
