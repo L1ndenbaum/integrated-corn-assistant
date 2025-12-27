@@ -16,7 +16,7 @@ import (
 
 const (
 	defaultLegacySchema = "crop_chat_db"
-	defaultLegacyTable  = "user"
+	defaultLegacyTable  = "users"
 	defaultTargetSchema = "corn_assistant_user"
 )
 

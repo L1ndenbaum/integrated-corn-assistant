@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    image: corn-assistant-user:latest
+    container_name: user-service
+    ports:
+      - "8081:8081"
+    environment:
+      PORT: "8081"
+      USER_DB_DSN: "root:${MYSQL_PASSWORD}@tcp(${MYSQL_HOST}:3306)/corn_assistant_user?parseTime=true"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    image: corn-assistant-auth:latest
+    container_name: auth-service
+    ports:
+      - "8082:8082"
+    environment:
+      PORT: "8082"
+      AUTH_DB_DSN: "root:${MYSQL_PASSWORD}@tcp(${MYSQL_HOST}:3306)/corn_assistant_auth?parseTime=true"
+      USER_SERVICE_BASE_URL: "http://user-service:8081"
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_ISSUER: "corn-assistant"
+      ACCESS_TOKEN_TTL: "15m"
+      REFRESH_TOKEN_TTL: "720h"
+      COOKIE_SECURE: "false"
+      COOKIE_SAMESITE: "lax"
+    depends_on:
+      - user-service
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

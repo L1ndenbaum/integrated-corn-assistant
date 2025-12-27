@@ -32,3 +32,23 @@ Notes:
 - If auth-service runs in a container on the same host, replace 127.0.0.1 with
   the host IP or use --network host on Linux.
 - Cookies are set by auth-service; gateway should proxy /api/v1/auth/* to it.
+
+Docker Compose (bridge, MySQL on host)
+
+1) Create a .env file next to docker-compose.yml:
+
+```
+MYSQL_PASSWORD=YOUR_PASS
+MYSQL_HOST=host.docker.internal
+JWT_SECRET=CHANGE_ME
+```
+
+2) Start services:
+
+```
+docker compose up -d --build
+```
+
+Notes:
+- host.docker.internal is mapped to the host gateway via extra_hosts.
+- MySQL must listen on 0.0.0.0 or the host IP to accept connections.
