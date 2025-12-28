@@ -43,7 +43,14 @@ MYSQL_HOST=host.docker.internal
 JWT_SECRET=CHANGE_ME
 ```
 
-2) Start services:
+2) Build static assets first:
+
+```
+cd client
+./build.sh
+```
+
+3) Start services:
 
 ```
 docker compose up -d --build

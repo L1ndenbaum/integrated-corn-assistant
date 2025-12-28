@@ -1,6 +1,30 @@
 version: "3.9"
 
 services:
+  static-server:
+    build:
+      context: ./static-server
+      dockerfile: Dockerfile
+    image: corn-assistant-static:latest
+    container_name: static-server
+    ports:
+      - "8086:8086"
+    environment:
+      PORT: "8086"
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: ./infra/nginx
+      dockerfile: Dockerfile
+    image: corn-assistant-nginx:latest
+    container_name: corn-assistant-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - static-server
+    restart: unless-stopped
+
   user-service:
     build:
       context: ./services/user-service

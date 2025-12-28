@@ -1,4 +1,4 @@
-CREATE TABLE auth_refresh_tokens (
+CREATE TABLE IF NOT EXISTS auth_refresh_tokens (
     refresh_token_id BINARY(16) NOT NULL PRIMARY KEY,
     user_uuid BINARY(16) NOT NULL,
     token_hash BINARY(32) NOT NULL,

@@ -1,8 +1,8 @@
 ## Overview
 
 Goal: refactor the current monolith into microservices, containerize each service,
-and deploy on k3s with Docker Hub images. The gateway (Gin) continues to serve
-frontend static assets for now.
+and deploy on k3s with Docker Hub images. Nginx fronts the system and routes
+traffic to static-server and api-gateway.
 
 Key constraints:
 - Monorepo layout.
@@ -13,34 +13,38 @@ Key constraints:
 
 ## Target Services
 
-1) gateway (Go + Gin)
-   - Serves frontend static assets (current Next.js build output).
+1) api-gateway (Go + Gin)
    - Routes API requests to internal services.
    - No direct DB access.
 
-2) user-service (Go + sqlc + MySQL)
+2) static-server (Go + Gin)
+   - Serves frontend static assets (Next.js build output).
+   - Serves user avatar files.
+
+3) user-service (Go + sqlc + MySQL)
    - Register/login/change password/update avatar.
    - Own tables: users, user_avatars (or users.avatar).
 
-3) auth-service (Go + JWT + MySQL)
+4) auth-service (Go + JWT + MySQL)
    - Issues access/refresh tokens.
    - Own tables: refresh tokens (no direct user data).
 
-4) chat-service (Python + FastAPI + LangChain)
+5) chat-service (Python + FastAPI + LangChain)
    - Chat workflow, sessions, messages, file metadata.
    - Own tables: chat_conversations, chat_messages, chat_files.
 
-5) weather-service (Go)
+6) weather-service (Go)
    - Calls AMap weather APIs.
    - No DB required (optional cache table later).
 
-6) diagnosis-service (Python)
+7) diagnosis-service (Python)
    - Image diagnosis API.
    - Own tables: diagnosis_jobs, diagnosis_results (optional).
 
 ## Proposed Ports (local dev / container)
 
-- gateway: 8080
+- api-gateway: 8080
+- static-server: 8086
 - user-service: 8081
 - auth-service: 8082
 - chat-service: 8083
@@ -55,8 +59,9 @@ service DNS name (for example, `user-service.default.svc.cluster.local:8081`).
 /
   client/                 frontend (Next.js)
   diagnosis/              existing model code (to become diagnosis-service)
-  server-go/              current monolith; will become gateway codebase
+  static-server/          static site + avatar server (renamed from server-go)
   services/
+    api-gateway/          API gateway (to be created)
     user-service/         new Go module (sqlc)
     auth-service/         new Go module (sqlc + JWT)
     chat-service/         new Python service
@@ -72,7 +77,7 @@ service DNS name (for example, `user-service.default.svc.cluster.local:8081`).
 - Each service gets its own schema (database) and a dedicated MySQL user with
   permissions only on that schema.
 - Each service defines only its own SQL files and sqlc generation.
-- Gateway never touches the DB.
+- api-gateway never touches the DB.
 
 Root is used only for provisioning schemas/users, not by services.
 
@@ -83,7 +88,7 @@ Current schema names:
 
 ## API Routing
 
-External APIs (client -> gateway -> services):
+External APIs (client -> api-gateway -> services):
 - /api/v1/user/*        -> user-service
 - /api/v1/auth/*        -> auth-service
 - /api/v1/chat/*        -> chat-service
@@ -99,7 +104,7 @@ Internal APIs are called directly between services over the cluster network.
 ## Messaging (RabbitMQ)
 
 - Used for async work between services.
-- Example: gateway handles avatar file upload, then publishes a message for
+- Example: api-gateway handles avatar file upload, then publishes a message for
   user-service to update the avatar path in its own schema.
 
 ## Next Steps (planned sequence)
