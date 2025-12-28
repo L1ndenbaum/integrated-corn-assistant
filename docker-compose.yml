@@ -11,7 +11,7 @@ services:
       - "8081:8081"
     environment:
       PORT: "8081"
-      USER_DB_DSN: "root:${MYSQL_PASSWORD}@tcp(${MYSQL_HOST}:3306)/corn_assistant_user?parseTime=true"
+      USER_DB_DSN: "corn-assistant-app:${MYSQL_PASSWORD}@tcp(${MYSQL_HOST}:3306)/corn_assistant_user?parseTime=true"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
@@ -26,7 +26,7 @@ services:
       - "8082:8082"
     environment:
       PORT: "8082"
-      AUTH_DB_DSN: "root:${MYSQL_PASSWORD}@tcp(${MYSQL_HOST}:3306)/corn_assistant_auth?parseTime=true"
+      AUTH_DB_DSN: "corn-assistant-auth:${MYSQL_PASSWORD}@tcp(${MYSQL_HOST}:3306)/corn_assistant_auth?parseTime=true"
       USER_SERVICE_BASE_URL: "http://user-service:8081"
       JWT_SECRET: "${JWT_SECRET}"
       JWT_ISSUER: "corn-assistant"
