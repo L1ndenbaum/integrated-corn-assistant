@@ -1,5 +1,8 @@
 FROM golang:1.24-alpine AS build
-
+ARG GOPROXY
+ARG GOSUMDB
+ENV GOPROXY=${GOPROXY}
+ENV GOSUMDB=${GOSUMDB}
 WORKDIR /src
 COPY user-service/go.mod user-service/go.sum ./user-service/
 COPY common/go.mod common/go.sum ./common/

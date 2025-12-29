@@ -1,5 +1,8 @@
 FROM golang:1.24-alpine AS build
-
+ARG GOPROXY
+ARG GOSUMDB
+ENV GOPROXY=${GOPROXY}
+ENV GOSUMDB=${GOSUMDB}
 WORKDIR /src
 COPY auth-service/go.mod auth-service/go.sum ./auth-service/
 WORKDIR /src/auth-service
