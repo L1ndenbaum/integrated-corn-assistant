@@ -8,6 +8,8 @@ services:
     build:
       context: ./static-server
       dockerfile: Dockerfile
+      args:
+        <<: *go-env
     image: corn-assistant-static:latest
     container_name: static-server
     ports:
@@ -18,8 +20,6 @@ services:
     volumes:
       - avatars_data:/app/avatars
     restart: unless-stopped
-    args:
-        <<: *go-env
 
   nginx:
     build:
@@ -37,6 +37,8 @@ services:
     build:
       context: ./services
       dockerfile: user-service/Dockerfile
+      args:
+        <<: *go-env
     image: corn-assistant-user:latest
     container_name: user-service
     ports:
@@ -49,13 +51,13 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
-    args:
-        <<: *go-env
 
   auth-service:
     build:
       context: ./services
       dockerfile: auth-service/Dockerfile
+      args:
+        <<: *go-env
     image: corn-assistant-auth:latest
     container_name: auth-service
     ports:
@@ -75,8 +77,6 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
-    args:
-        <<: *go-env
 
 volumes:
   avatars_data:
