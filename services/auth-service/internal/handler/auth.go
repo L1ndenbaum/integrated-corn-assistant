@@ -47,17 +47,6 @@ type loginPhoneRequest struct {
 	Password string `json:"password"`
 }
 
-type userPayload struct {
-	UserUUID      string `json:"user_uuid"`
-	Username      string `json:"username"`
-	AvatarPath    string `json:"avatar_path"`
-	UserPrivilege int32  `json:"user_privilege"`
-}
-
-type sessionResponse struct {
-	User userPayload `json:"user"`
-}
-
 func (h *Handler) LoginUsername(c *gin.Context) {
 	var req loginUsernameRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.Username == "" || req.Password == "" {
@@ -89,30 +78,6 @@ func (h *Handler) LoginPhone(c *gin.Context) {
 
 	user, err := h.users.VerifyPhone(c.Request.Context(), req.Phone, req.Password)
 	h.handleLoginResult(c, user, err)
-}
-
-func (h *Handler) Session(c *gin.Context) {
-	token := accessTokenFromRequest(c)
-	if token == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
-		return
-	}
-
-	claims, err := h.tokens.ParseAccessToken(token)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "令牌无效"})
-		return
-	}
-
-	user, err := h.users.GetUserProfileByUUID(c.Request.Context(), claims.Subject)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "用户状态异常"})
-		return
-	}
-
-	c.JSON(http.StatusOK, sessionResponse{
-		User: toUserPayload(user),
-	})
 }
 
 func (h *Handler) Refresh(c *gin.Context) {
@@ -168,9 +133,7 @@ func (h *Handler) Refresh(c *gin.Context) {
 	}
 
 	h.setTokenCookies(c, accessToken, accessExpiry, newRefresh.Token, newRefresh.ExpiresAt)
-	c.JSON(http.StatusOK, sessionResponse{
-		User: toUserPayload(user),
-	})
+	c.JSON(http.StatusOK, gin.H{"message": "刷新成功"})
 }
 
 func (h *Handler) Logout(c *gin.Context) {
@@ -239,18 +202,7 @@ func (h *Handler) handleLoginResult(c *gin.Context, user userclient.UserProfile,
 	}
 
 	h.setTokenCookies(c, accessToken, accessExpiry, refreshToken.Token, refreshToken.ExpiresAt)
-	c.JSON(http.StatusOK, sessionResponse{
-		User: toUserPayload(user),
-	})
-}
-
-func toUserPayload(user userclient.UserProfile) userPayload {
-	return userPayload{
-		UserUUID:      user.UserUUID,
-		Username:      user.Username,
-		AvatarPath:    user.AvatarPath,
-		UserPrivilege: user.UserPrivilege,
-	}
+	c.JSON(http.StatusOK, gin.H{"message": "登录成功"})
 }
 
 func toTokenPayload(user userclient.UserProfile) auth.UserTokenPayload {
@@ -262,19 +214,6 @@ func toTokenPayload(user userclient.UserProfile) auth.UserTokenPayload {
 		Status:     user.UserStatus,
 		MFAEnabled: user.MFAEnabled,
 	}
-}
-
-func accessTokenFromRequest(c *gin.Context) string {
-	authHeader := c.GetHeader("Authorization")
-	if strings.HasPrefix(strings.ToLower(authHeader), "bearer ") {
-		return strings.TrimSpace(authHeader[7:])
-	}
-
-	token, err := c.Cookie("access_token")
-	if err != nil {
-		return ""
-	}
-	return token
 }
 
 func (h *Handler) setTokenCookies(c *gin.Context, accessToken string, accessExpiry time.Time, refreshToken string, refreshExpiry time.Time) {

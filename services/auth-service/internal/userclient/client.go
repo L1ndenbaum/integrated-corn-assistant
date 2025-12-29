@@ -19,7 +19,6 @@ type UserProfile struct {
 	UserUUID      string `json:"user_uuid"`
 	UserID        int64  `json:"user_id"`
 	Username      string `json:"username"`
-	AvatarPath    string `json:"avatar_path"`
 	UserPrivilege int32  `json:"user_privilege"`
 	UserStatus    int32  `json:"user_status"`
 	MFAEnabled    bool   `json:"mfa_enabled"`

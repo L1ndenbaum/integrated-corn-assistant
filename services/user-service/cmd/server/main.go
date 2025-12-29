@@ -12,6 +12,7 @@ import (
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/user-service/internal/handler"
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/user-service/internal/server"
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/user-service/internal/store"
+	"github.com/L1ndenbaum/integrated-corn-assistant/services/common/jwtauth"
 )
 
 func main() {
@@ -34,10 +35,16 @@ func main() {
 		log.Fatalf("ping db: %v", err)
 	}
 
+	jwtVerifier, err := jwtauth.NewVerifier(cfg.JWTSecret, cfg.JWTIssuer)
+	if err != nil {
+		log.Fatalf("jwt verifier error: %v", err)
+	}
+
 	userStore := store.NewMySQLStore(db)
 	internalHandler := handler.NewInternal(userStore)
+	userHandler := handler.NewUser(userStore)
 
-	router := server.NewRouter(internalHandler)
+	router := server.NewRouter(internalHandler, userHandler, jwtVerifier)
 
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.Port,

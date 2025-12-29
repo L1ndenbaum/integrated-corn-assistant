@@ -32,7 +32,7 @@ export function UserAuthButton() {
 
     const loadSession = async () => {
       try {
-        const response = await fetch(`${apiBaseUrl}/api/v1/auth/session`, {
+        const response = await fetch(`${apiBaseUrl}/api/v1/user/profile`, {
           credentials: "include",
         })
 
@@ -43,14 +43,12 @@ export function UserAuthButton() {
         if (response.ok) {
           const data = await response.json().catch(() => null)
           const username = data?.user?.username || localStorage.getItem("username")
-          const avatarPath = data?.user?.avatar_path || storedAvatar
 
           if (username) {
             localStorage.setItem("username", username)
           }
-          if (avatarPath) {
-            localStorage.setItem("user_avatar", avatarPath)
-            setAvatar(avatarPath)
+          if (storedAvatar) {
+            setAvatar(storedAvatar)
           } else {
             setAvatar("/placeholder-user.jpg")
           }

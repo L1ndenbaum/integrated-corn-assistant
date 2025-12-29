@@ -27,7 +27,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
     const verifySession = async () => {
       try {
-        const response = await fetch(`${apiBaseUrl}/api/v1/auth/session`, {
+        const response = await fetch(`${apiBaseUrl}/api/v1/user/profile`, {
           credentials: "include",
         })
 

@@ -89,10 +89,6 @@ export default function LoginPage() {
           data?.user?.username || data?.username || identifier.trim()
 
         localStorage.setItem("username", resolvedUsername)
-
-        if (data?.user?.avatar_path) {
-          localStorage.setItem("user_avatar", data.user.avatar_path)
-        }
         
         // 获取返回URL，如果没有则默认跳转到主页
         const returnUrl = new URLSearchParams(window.location.search).get("returnUrl") || "/"

@@ -11,7 +11,8 @@ FROM alpine:3.20
 RUN adduser -D -H -u 10001 app && apk add --no-cache ca-certificates
 WORKDIR /app
 COPY --from=build /out/static-server /app/static-server
-COPY out/static /app/out/static
+COPY --from=build /src/static /app/static
+RUN mkdir -p /app/avatars && chown -R app:app /app/avatars
 USER app
 EXPOSE 8086
 ENTRYPOINT ["/app/static-server"]

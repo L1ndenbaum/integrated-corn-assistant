@@ -11,6 +11,9 @@ services:
       - "8086:8086"
     environment:
       PORT: "8086"
+      AVATAR_DIR: "/app/avatars"
+    volumes:
+      - avatars_data:/app/avatars
     restart: unless-stopped
 
   nginx:
@@ -27,8 +30,8 @@ services:
 
   user-service:
     build:
-      context: ./services/user-service
-      dockerfile: Dockerfile
+      context: ./services
+      dockerfile: user-service/Dockerfile
     image: corn-assistant-user:latest
     container_name: user-service
     ports:
@@ -36,14 +39,16 @@ services:
     environment:
       PORT: "8081"
       USER_DB_DSN: "corn-assistant-app:${MYSQL_PASSWORD}@tcp(${MYSQL_HOST}:3306)/corn_assistant_user?parseTime=true"
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_ISSUER: "corn-assistant"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
   auth-service:
     build:
-      context: ./services/auth-service
-      dockerfile: Dockerfile
+      context: ./services
+      dockerfile: auth-service/Dockerfile
     image: corn-assistant-auth:latest
     container_name: auth-service
     ports:
@@ -63,3 +68,6 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
+
+volumes:
+  avatars_data:

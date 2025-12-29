@@ -19,7 +19,7 @@ Key constraints:
 
 2) static-server (Go + Gin)
    - Serves frontend static assets (Next.js build output).
-   - Serves user avatar files.
+   - Serves user avatar files from a dedicated volume.
 
 3) user-service (Go + sqlc + MySQL)
    - Register/login/change password/update avatar.

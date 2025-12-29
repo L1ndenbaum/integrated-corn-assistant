@@ -39,13 +39,7 @@ the expectations for gateway and frontend.
    - access_token (JWT)
    - refresh_token (random)
 4) auth-service stores refresh token hash in its own table.
-5) Response sets cookies and returns a minimal user profile.
-
-## Session Check (external)
-
-1) Client sends GET /api/v1/auth/session with cookies.
-2) auth-service validates access_token.
-3) On success, returns minimal user profile.
+5) Response sets cookies and returns a simple message. Frontend can fetch user profile from user-service.
 
 ## Refresh Flow (internal / external)
 
@@ -77,17 +71,8 @@ Login (phone):
     POST /api/v1/auth/login/phone
     { "phone": "+8613800138000", "password": "..." }
 
-Session:
-    GET /api/v1/auth/session
-    Response:
-    {
-        "user": {
-            "user_uuid": "...",
-            "username": "...",
-            "avatar_path": "...",
-            "user_privilege": 0
-        }
-    }
+Profile:
+    GET /api/v1/user/profile (user-service, requires access_token cookie)
 
 ## Internal APIs (auth-service -> user-service)
 
@@ -110,8 +95,6 @@ Profile by UUID:
         "user": {
             "user_uuid": "...",
             "user_id": 1,
-            "username": "...",
-            "avatar_path": "...",
             "user_privilege": 0,
             "user_status": 1,
             "mfa_enabled": false
@@ -135,5 +118,5 @@ K3s example:
 
 ## Notes
 
-- Access token should be httpOnly; frontend relies on /api/v1/auth/session.
+- Access token should be httpOnly; frontend relies on /api/v1/user/profile.
 - Gateway only proxies; it does not issue tokens.

@@ -3,8 +3,8 @@ Docker run (auth-service + user-service)
 Build images:
 
 ```
-docker build -t YOUR_DOCKERHUB_USER/corn-assistant-user:latest -f services/user-service/Dockerfile services/user-service
-docker build -t YOUR_DOCKERHUB_USER/corn-assistant-auth:latest -f services/auth-service/Dockerfile services/auth-service
+docker build -t YOUR_DOCKERHUB_USER/corn-assistant-user:latest -f services/user-service/Dockerfile services
+docker build -t YOUR_DOCKERHUB_USER/corn-assistant-auth:latest -f services/auth-service/Dockerfile services
 ```
 
 Run user-service:
@@ -12,6 +12,8 @@ Run user-service:
 ```
 docker run -d --name user-service -p 8081:8081 \
   -e USER_DB_DSN='root:YOUR_PASS@tcp(127.0.0.1:3306)/corn_assistant_user?parseTime=true' \
+  -e JWT_SECRET='CHANGE_ME' \
+  -e JWT_ISSUER='corn-assistant' \
   YOUR_DOCKERHUB_USER/corn-assistant-user:latest
 ```
 
@@ -59,3 +61,4 @@ docker compose up -d --build
 Notes:
 - host.docker.internal is mapped to the host gateway via extra_hosts.
 - MySQL must listen on 0.0.0.0 or the host IP to accept connections.
+- Avatars are stored in a named volume: avatars_data.

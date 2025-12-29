@@ -46,7 +46,6 @@ type internalUserPayload struct {
 	UserUUID      string `json:"user_uuid"`
 	UserID        int64  `json:"user_id"`
 	Username      string `json:"username"`
-	AvatarPath    string `json:"avatar_path"`
 	UserPrivilege int32  `json:"user_privilege"`
 	UserStatus    int32  `json:"user_status"`
 	MFAEnabled    bool   `json:"mfa_enabled"`
@@ -151,16 +150,10 @@ func (h *InternalHandler) handleVerify(c *gin.Context, user store.UserRecord, pa
 }
 
 func toInternalPayload(user store.UserRecord) internalUserPayload {
-	avatar := ""
-	if user.AvatarPath != nil {
-		avatar = *user.AvatarPath
-	}
-
 	return internalUserPayload{
 		UserUUID:      uuid.Must(uuid.FromBytes(user.UserUUID)).String(),
 		UserID:        user.UserID,
 		Username:      user.Username,
-		AvatarPath:    avatar,
 		UserPrivilege: user.UserPrivilege,
 		UserStatus:    user.UserStatus,
 		MFAEnabled:    user.MFAEnabled,

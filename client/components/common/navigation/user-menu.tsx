@@ -34,7 +34,7 @@ export function UserMenu() {
 
     const loadSession = async () => {
       try {
-        const response = await fetch(`${apiBaseUrl}/api/v1/auth/session`, {
+        const response = await fetch(`${apiBaseUrl}/api/v1/user/profile`, {
           credentials: "include",
         })
 
@@ -45,16 +45,14 @@ export function UserMenu() {
         if (response.ok) {
           const data = await response.json().catch(() => null)
           const resolvedUsername = data?.user?.username || storedUsername
-          const resolvedAvatar = data?.user?.avatar_path || storedAvatar
 
           if (resolvedUsername) {
             localStorage.setItem("username", resolvedUsername)
             setUsername(resolvedUsername)
           }
 
-          if (resolvedAvatar) {
-            localStorage.setItem("user_avatar", resolvedAvatar)
-            setAvatar(resolvedAvatar)
+          if (storedAvatar) {
+            setAvatar(storedAvatar)
           }
           return
         }

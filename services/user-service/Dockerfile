@@ -1,9 +1,13 @@
 FROM golang:1.22-alpine AS build
 
 WORKDIR /src
-COPY go.mod ./
+COPY user-service/go.mod user-service/go.sum ./user-service/
+COPY common/go.mod common/go.sum ./common/
+WORKDIR /src/user-service
 RUN go mod download
+WORKDIR /src
 COPY . .
+WORKDIR /src/user-service
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/user-service ./cmd/server
 

@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -13,6 +12,7 @@ import (
 var (
 	staticDir            string
 	frontendStaticOutDir string
+	avatarDir            string
 )
 
 func init() {
@@ -22,8 +22,12 @@ func init() {
 		panic(err)
 	}
 	exPath := filepath.Dir(ex)
-	staticDir = filepath.Join(exPath, "out", "static")
+	staticDir = filepath.Join(exPath, "static")
 	frontendStaticOutDir = filepath.Join(staticDir, "out")
+	avatarDir = os.Getenv("AVATAR_DIR")
+	if avatarDir == "" {
+		avatarDir = filepath.Join(exPath, "avatars")
+	}
 }
 
 func main() {
@@ -43,7 +47,7 @@ func setupRoutes(router *gin.Engine) {
 	// 静态文件服务
 	router.Static("/_next", filepath.Join(frontendStaticOutDir, "_next"))
 	router.Static("/images", filepath.Join(frontendStaticOutDir, "images"))
-	router.Static("/static/avatars", filepath.Join(staticDir, "avatars"))
+	router.Static("/avatar", avatarDir)
 
 	// 主页和图标
 	router.GET("/", func(c *gin.Context) {
@@ -56,12 +60,6 @@ func setupRoutes(router *gin.Engine) {
 
 	router.GET("/auth/register", func(c *gin.Context) {
 		c.File(filepath.Join(frontendStaticOutDir, "auth", "register.html"))
-	})
-
-	// 用户头像
-	router.GET("/avatars/*filepath", func(c *gin.Context) {
-		filePath := strings.TrimPrefix(c.Param("filepath"), "/")
-		c.File(filepath.Join(staticDir, "avatars", filePath))
 	})
 
 	// 诊断页

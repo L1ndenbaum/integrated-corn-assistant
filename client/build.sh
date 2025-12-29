@@ -1,10 +1,10 @@
 #!/bin/bash
 
 set -euo pipefail
-CLIENT_ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-TARGET_STATIC_DIR="${CLIENT_ROOT_DIR}/static-server/out/static"
+PROJECT_ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+TARGET_STATIC_DIR="${PROJECT_ROOT_DIR}/static-server/static"
 TARGET_OUT_DIR="${TARGET_STATIC_DIR}/out"
-TARGET_AVATAR_DIR="${TARGET_STATIC_DIR}/avatars"
+TARGET_AVATAR_DIR="${PROJECT_ROOT_DIR}/static-server/avatars"
 
 echo "Building project..."
 npm run build
