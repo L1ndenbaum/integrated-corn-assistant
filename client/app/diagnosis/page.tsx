@@ -499,7 +499,7 @@ export default function DiagnosisPage() {
               </div>
             </motion.div>
 
-            <ScrollArea className="flex-1">
+            <div className="flex-1 overflow-y-auto">
               <div className="p-6 space-y-4">
                 {diagnosisResults.length > 0 && (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
@@ -580,7 +580,7 @@ export default function DiagnosisPage() {
                   </Card>
                 </motion.div>
               </div>
-            </ScrollArea>
+            </div>
           </div>
 
           <motion.button
