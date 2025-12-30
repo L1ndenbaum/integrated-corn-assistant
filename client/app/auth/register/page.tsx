@@ -148,7 +148,15 @@ export default function RegisterPage() {
         body: formData,
       })
 
-      const data = await response.json()
+      const rawText = await response.text()
+      let data: Record<string, any> = {}
+      if (rawText) {
+        try {
+          data = JSON.parse(rawText)
+        } catch (parseError) {
+          data = { message: rawText }
+        }
+      }
 
       if (response.ok) {
         setSuccess("注册成功！正在跳转到登录页面...")
@@ -156,7 +164,7 @@ export default function RegisterPage() {
           router.push("/auth/login")
         }, 2000)
       } else {
-        setError(data.message || data.error || "注册失败")
+        setError(data.message || data.error || `注册失败（${response.status}）`)
       }
     } catch (error) {
       console.error("Register error:", error)

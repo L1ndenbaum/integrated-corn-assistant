@@ -43,5 +43,9 @@ func NewRouter(internal *handler.InternalHandler, users *handler.UserHandler, ve
 		authedUserGroup.POST("/avatar", users.UpdateAvatar)
 	}
 
+	router.NoRoute(func(c *gin.Context) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "接口不存在"})
+	})
+
 	return router
 }
