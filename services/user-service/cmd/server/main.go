@@ -12,7 +12,7 @@ import (
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/user-service/internal/handler"
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/user-service/internal/server"
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/user-service/internal/store"
-	"github.com/L1ndenbaum/integrated-corn-assistant/services/common/jwtauth"
+	"github.com/L1ndenbaum/integrated-corn-assistant/common/jwtauth"
 )
 
 func main() {

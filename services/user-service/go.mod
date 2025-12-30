@@ -3,7 +3,7 @@ module github.com/L1ndenbaum/integrated-corn-assistant/services/user-service
 go 1.23.0
 
 require (
-	github.com/L1ndenbaum/integrated-corn-assistant/services/common v0.0.0
+	github.com/L1ndenbaum/integrated-corn-assistant/common v0.0.0
 	github.com/gin-gonic/gin v1.10.1
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/google/uuid v1.6.0
@@ -40,4 +40,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/L1ndenbaum/integrated-corn-assistant/services/common => ../common
+replace github.com/L1ndenbaum/integrated-corn-assistant/common => ../../common

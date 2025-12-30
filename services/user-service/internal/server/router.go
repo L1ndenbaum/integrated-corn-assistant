@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/user-service/internal/handler"
-	"github.com/L1ndenbaum/integrated-corn-assistant/services/common/jwtauth"
+	"github.com/L1ndenbaum/integrated-corn-assistant/common/jwtauth"
 )
 
 func NewRouter(internal *handler.InternalHandler, users *handler.UserHandler, verifier *jwtauth.Verifier) *gin.Engine {

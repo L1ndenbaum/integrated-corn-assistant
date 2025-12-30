@@ -1,16 +1,8 @@
 version: "3.9"
 
-x-go-env: &go-env
-  GOPROXY: https://goproxy.cn,direct
-  GOSUMDB: sum.golang.google.cn
 services:
   static-server:
-    build:
-      context: ./static-server
-      dockerfile: Dockerfile
-      args:
-        <<: *go-env
-    image: corn-assistant-static:latest
+    image: ghcr.io/l1ndenbaum/integrated-corn-assistant-static-server:latest
     container_name: static-server
     ports:
       - "8086:8086"
@@ -22,10 +14,7 @@ services:
     restart: unless-stopped
 
   nginx:
-    build:
-      context: ./infra/nginx
-      dockerfile: Dockerfile
-    image: corn-assistant-nginx:latest
+    image: ghcr.io/l1ndenbaum/integrated-corn-assistant-nginx:latest
     container_name: corn-assistant-nginx
     ports:
       - "80:80"
@@ -34,12 +23,7 @@ services:
     restart: unless-stopped
 
   user-service:
-    build:
-      context: ./services
-      dockerfile: user-service/Dockerfile
-      args:
-        <<: *go-env
-    image: corn-assistant-user:latest
+    image: ghcr.io/l1ndenbaum/integrated-corn-assistant-user-service:latest
     container_name: user-service
     ports:
       - "8081:8081"
@@ -53,12 +37,7 @@ services:
     restart: unless-stopped
 
   auth-service:
-    build:
-      context: ./services
-      dockerfile: auth-service/Dockerfile
-      args:
-        <<: *go-env
-    image: corn-assistant-auth:latest
+    image: ghcr.io/l1ndenbaum/integrated-corn-assistant-auth-service:latest
     container_name: auth-service
     ports:
       - "8082:8082"

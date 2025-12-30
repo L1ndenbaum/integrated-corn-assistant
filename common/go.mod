@@ -1,4 +1,4 @@
-module github.com/L1ndenbaum/integrated-corn-assistant/services/common
+module github.com/L1ndenbaum/integrated-corn-assistant/common
 
 go 1.22
 

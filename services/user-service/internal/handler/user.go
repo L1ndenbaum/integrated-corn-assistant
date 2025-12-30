@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"github.com/L1ndenbaum/integrated-corn-assistant/services/common/jwtauth"
+	"github.com/L1ndenbaum/integrated-corn-assistant/common/jwtauth"
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/user-service/internal/store"
 )
 

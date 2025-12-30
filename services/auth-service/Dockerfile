@@ -4,12 +4,11 @@ ARG GOSUMDB
 ENV GOPROXY=${GOPROXY}
 ENV GOSUMDB=${GOSUMDB}
 WORKDIR /src
-COPY auth-service/go.mod auth-service/go.sum ./auth-service/
-WORKDIR /src/auth-service
+COPY go.mod go.sum ./
+WORKDIR /src
 RUN go mod download
 WORKDIR /src
 COPY . .
-WORKDIR /src/auth-service
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/auth-service ./cmd/server
 
