@@ -11,13 +11,17 @@ from model import create_model, get_preprocessing_transforms
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 app = FastAPI(title="玉米病虫害识别API", description="提供玉米病虫害图像分类服务")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://101.43.131.195:4040", "http://38.60.251.79:8080"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+allowed_origins = os.getenv("CORS_ORIGINS", "")
+if allowed_origins:
+    origins = [origin.strip() for origin in allowed_origins.split(",") if origin.strip()]
+    if origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
 model = None
 transform = None
@@ -64,7 +68,7 @@ async def health_check():
     """健康检查"""
     return {"status": "healthy"}
 
-@app.post("/api/diagnosis")
+@app.post("/api/v1/diagnosis")
 async def predict(files: List[UploadFile] = File(...)):
     """
     对上传的图像进行病虫害分类预测
@@ -120,4 +124,5 @@ async def predict(files: List[UploadFile] = File(...)):
 if __name__ == "__main__":
     initialize_model()
     print("玉米病虫害识别API已启动")
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    port = int(os.getenv("PORT", "8085"))
+    uvicorn.run(app, host="0.0.0.0", port=port)

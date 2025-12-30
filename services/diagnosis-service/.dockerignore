@@ -1,0 +1,17 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.tmp
+*.sqlite
+
+.env
+.env.*
+
+.git
+.gitignore
+
+train_test.py
+data_init.py
+download_dataset.sh

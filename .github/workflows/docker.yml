@@ -107,6 +107,17 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-weather-service:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-weather-service:${{ github.sha }}
 
+      - name: Build diagnosis-service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/diagnosis-service
+          push: true
+          cache-from: type=gha,scope=diagnosis-service
+          cache-to: type=gha,mode=max,scope=diagnosis-service
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-diagnosis-service:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-diagnosis-service:${{ github.sha }}
+
       - name: Build api-gateway
         uses: docker/build-push-action@v6
         with:

@@ -58,7 +58,6 @@ service DNS name (for example, `user-service.default.svc.cluster.local:8081`).
 
 /
   client/                 frontend (Next.js)
-  diagnosis/              existing model code (to become diagnosis-service)
   static-server/          static site + avatar server (renamed from server-go)
   api-gateway/            API gateway (Go + Gin)
   services/
@@ -66,7 +65,7 @@ service DNS name (for example, `user-service.default.svc.cluster.local:8081`).
     auth-service/         new Go module (sqlc + JWT)
     chat-service/         new Python service
     weather-service/      new Go service
-    diagnosis-service/    moved from diagnosis/ when ready
+    diagnosis-service/    Python FastAPI service
   deploy/
     k8s/                  manifests or Helm charts
   docs/

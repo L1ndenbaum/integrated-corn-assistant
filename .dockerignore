@@ -17,6 +17,7 @@ docs
 scripts
 current_change
 api-gateway
+services/diagnosis-service
 
 **/node_modules
 **/.next

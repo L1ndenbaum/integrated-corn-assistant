@@ -4,10 +4,8 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Loader2,
-  MapPin,
   Cloud,
   Upload,
   Send,
@@ -171,7 +169,7 @@ export default function DiagnosisPage() {
         formData.append("files", file)
       })
 
-      const diagnosisResponse = await fetch(`${DIAGNOSIS_BASE_URL}/api/diagnosis`, {
+      const diagnosisResponse = await fetch(`${DIAGNOSIS_BASE_URL}/api/v1/diagnosis`, {
         method: "POST",
         body: formData,
       })
@@ -352,111 +350,87 @@ export default function DiagnosisPage() {
               <p className="mt-2 text-sm text-gray-600">上传玉米图片，结合当前位置天气信息生成专业诊断建议。</p>
             </motion.div>
 
-            <ScrollArea className="flex-1">
-              <div className="p-6 space-y-4">
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
-                  <Card className="border-gray-200">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-sm text-gray-900">
-                        <MapPin className="w-4 h-4 text-emerald-600" />
-                        位置信息
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      {isLoadingLocation ? (
-                        <div className="flex items-center justify-center py-4 text-sm text-gray-600">
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin text-emerald-600" />
-                          正在获取位置信息...
-                        </div>
-                      ) : weather ? (
-                        <div className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm">
+            <div className="flex-1 p-6 space-y-4">
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
+                <Card className="border-gray-200">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-sm text-gray-900">
+                      <Cloud className="w-4 h-4 text-emerald-600" />
+                      天气信息
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0 space-y-2 text-sm">
+                    {isLoadingLocation || isLoadingWeather ? (
+                      <div className="flex items-center justify-center py-4 text-sm text-gray-600">
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin text-emerald-600" />
+                        正在获取天气信息...
+                      </div>
+                    ) : weather ? (
+                      <>
+                        <div className="flex items-center justify-between">
                           <span className="text-gray-600">地点</span>
                           <span className="font-medium text-gray-900">{weather.location}</span>
                         </div>
-                      ) : (
-                        <p className="py-4 text-center text-sm text-gray-500">位置信息暂不可用，请稍后重试。</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                </motion.div>
-
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.15 }}>
-                  <Card className="border-gray-200">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-sm text-gray-900">
-                        <Cloud className="w-4 h-4 text-emerald-600" />
-                        天气信息
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0 space-y-2 text-sm">
-                      {isLoadingWeather ? (
-                        <div className="flex items-center justify-center py-4 text-sm text-gray-600">
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin text-emerald-600" />
-                          正在获取天气信息...
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600">温度</span>
+                          <span className="font-medium text-gray-900">{weather.temperature}°C</span>
                         </div>
-                      ) : weather ? (
-                        <>
-                          <div className="flex items-center justify-between">
-                            <span className="text-gray-600">温度</span>
-                            <span className="font-medium text-gray-900">{weather.temperature}°C</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-gray-600">天气状况</span>
-                            <span className="font-medium text-gray-900">{weather.weather}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-gray-600">湿度</span>
-                            <span className="font-medium text-gray-900">{weather.humidity}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-gray-600">风向/风速</span>
-                            <span className="font-medium text-gray-900">{weather.wind}</span>
-                          </div>
-                        </>
-                      ) : (
-                        <p className="py-4 text-center text-sm text-gray-500">天气信息暂不可用，请稍后重试。</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                </motion.div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600">天气状况</span>
+                          <span className="font-medium text-gray-900">{weather.weather}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600">湿度</span>
+                          <span className="font-medium text-gray-900">{weather.humidity}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-600">风向/风速</span>
+                          <span className="font-medium text-gray-900">{weather.wind}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="py-4 text-center text-sm text-gray-500">天气信息暂不可用，请稍后重试。</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.2 }}>
-                  <Card className="border-gray-200">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-gray-900">
-                        <Upload className="h-4 w-4 text-emerald-600" />
-                        上传玉米图片
-                      </CardTitle>
-                      <CardDescription>支持拖拽或点击上传，最多可选择 10 张图片。</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <ImageUploadDiagnosis
-                        onUpload={handleFileUpload}
-                        uploadedFiles={uploadedFiles}
-                        onRemoveFile={handleRemoveFile}
-                        disabled={isDiagnosing || isGeneratingResponse}
-                      />
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.2 }}
-                        className="rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-600"
-                      >
-                        💡 建议上传光线充足、清晰的叶片照片，以提高诊断准确度。
-                      </motion.div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.2 }}>
+                <Card className="border-gray-200">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-gray-900">
+                      <Upload className="h-4 w-4 text-emerald-600" />
+                      上传玉米图片
+                    </CardTitle>
+                    <CardDescription>支持拖拽或点击上传，最多可选择 10 张图片。</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <ImageUploadDiagnosis
+                      onUpload={handleFileUpload}
+                      uploadedFiles={uploadedFiles}
+                      onRemoveFile={handleRemoveFile}
+                      disabled={isDiagnosing || isGeneratingResponse}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.2 }}
+                      className="rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-600"
+                    >
+                      💡 建议上传光线充足、清晰的叶片照片，以提高诊断准确度。
+                    </motion.div>
+                  </CardContent>
+                </Card>
+              </motion.div>
 
-                {error && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-                    <Alert variant="destructive">
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  </motion.div>
-                )}
-              </div>
-            </ScrollArea>
+              {error && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                </motion.div>
+              )}
+            </div>
 
             <div className="border-t border-gray-200 p-6">
               <div className="flex flex-col gap-3">
