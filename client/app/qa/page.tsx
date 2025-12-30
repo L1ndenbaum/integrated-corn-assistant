@@ -68,7 +68,7 @@ export default function ChatbotPage() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/${storedUsername}`)
+      const response = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/user/${storedUsername}`)
       const data = await response.json()
       setConversations(data.conversations || [])
     } catch (error) {
@@ -360,7 +360,7 @@ export default function ChatbotPage() {
         // 如果是新对话，可能需要更新当前对话信息
         if (!currentConversationId) {
           // 重新获取对话列表，找到新创建的对话
-          const updatedResponse = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/${storedUsername}`)
+          const updatedResponse = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/user/${storedUsername}`)
           const updatedData = await updatedResponse.json()
           const updatedConversations = updatedData.conversations || []
 

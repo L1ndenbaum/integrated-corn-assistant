@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
+
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/chat-service/internal/config"
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/chat-service/internal/dify"
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/chat-service/internal/handler"
@@ -22,6 +24,7 @@ func main() {
 		log.Fatalf("dify client error: %v", err)
 	}
 
+	gin.SetMode(gin.ReleaseMode)
 	chatHandler := handler.New(client, cfg.PageLimit)
 	router := server.NewRouter(chatHandler)
 

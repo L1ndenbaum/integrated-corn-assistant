@@ -25,7 +25,7 @@ func NewRouter(handler *handler.Handler) *gin.Engine {
 	router.GET("/api/v1/chat/suggestions/:message_id", handler.GetNextProblemSuggestion)
 	router.POST("/api/v1/chat/files/upload", handler.UploadFiles)
 
-	router.GET("/api/v1/chat/conversations/:username", handler.ListConversations)
+	router.GET("/api/v1/chat/conversations/user/:username", handler.ListConversations)
 	router.GET("/api/v1/chat/conversations/:conversation_id/history", handler.GetChatHistory)
 	router.DELETE("/api/v1/chat/conversations/:conversation_id", handler.DeleteConversation)
 
