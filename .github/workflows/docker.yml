@@ -62,7 +62,7 @@ jobs:
       - name: Install frontend dependencies
         run: |
           cd client
-          npm ci- name: Install Frontend Dependencies
+          npm ci
 
       - name: Build frontend static resources
         run: |
