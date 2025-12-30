@@ -143,7 +143,7 @@ export default function RegisterPage() {
         formData.append("avatar", avatar)
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/user/register`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/user/register`, {
         method: "POST",
         body: formData,
       })
@@ -151,31 +151,12 @@ export default function RegisterPage() {
       const data = await response.json()
 
       if (response.ok) {
-        // 注册成功后，获取用户信息并保存头像
-        try {
-          const userInfoResponse = await fetch(`${API_BASE_URL}/api/user/info/${username.trim()}`)
-          const userInfoData = await userInfoResponse.json()
-          
-          if (userInfoResponse.ok && userInfoData.data) {
-            // 保存用户名到localStorage
-            localStorage.setItem("username", username.trim())
-            
-            // 存储用户头像信息
-            if (userInfoData.data.avatar) {
-              localStorage.setItem("user_avatar", userInfoData.data.avatar)
-            }
-          }
-        } catch (userInfoError) {
-          console.error("获取用户信息失败:", userInfoError)
-          // 即使获取用户信息失败，也继续执行
-        }
-        
         setSuccess("注册成功！正在跳转到登录页面...")
         setTimeout(() => {
           router.push("/auth/login")
         }, 2000)
       } else {
-        setError(data.message || "注册失败")
+        setError(data.message || data.error || "注册失败")
       }
     } catch (error) {
       console.error("Register error:", error)
