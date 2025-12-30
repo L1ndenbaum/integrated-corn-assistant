@@ -79,6 +79,15 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-static-server:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-static-server:${{ github.sha }}
 
+      - name: Build chat-service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/chat-service
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-chat-service:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-chat-service:${{ github.sha }}
+
       - name: Build api-gateway
         uses: docker/build-push-action@v6
         with:

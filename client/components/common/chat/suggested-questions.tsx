@@ -38,7 +38,7 @@ export function SuggestedQuestions({
         setHasData(false)
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/chat/next_suggest/${messageId}?username=${username}`)
+            const response = await fetch(`${API_BASE_URL}/api/v1/chat/suggestions/${messageId}?username=${username}`)
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`)

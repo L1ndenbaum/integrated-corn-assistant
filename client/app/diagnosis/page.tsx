@@ -245,7 +245,7 @@ export default function DiagnosisPage() {
     setMessages([assistantMessage])
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/chat`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/chat/messages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -68,7 +68,7 @@ export default function ChatbotPage() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/conversations/list/${storedUsername}`)
+      const response = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/${storedUsername}`)
       const data = await response.json()
       setConversations(data.conversations || [])
     } catch (error) {
@@ -86,7 +86,7 @@ export default function ChatbotPage() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}/history?username=${storedUsername}`)
+      const response = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/${conversationId}/history?username=${storedUsername}`)
       const data = await response.json()
 
       // 将后端返回的数据转换为前端的 Message 格式
@@ -143,7 +143,7 @@ export default function ChatbotPage() {
     }
 
     try {
-      await fetch(`${API_BASE_URL}/api/conversations/${conversationId}/delete?username=${storedUsername}`, {
+      await fetch(`${API_BASE_URL}/api/v1/chat/conversations/${conversationId}?username=${storedUsername}`, {
         method: "DELETE",
       })
       setConversations((prev) => prev.filter((conv) => conv.id !== conversationId))
@@ -185,7 +185,7 @@ export default function ChatbotPage() {
         formData.append("files", file)
       })
       formData.append("username", storedUsername)
-      const response = await fetch(`${API_BASE_URL}/api/file/upload`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/chat/files/upload`, {
         method: "POST",
         body: formData,
       })
@@ -265,7 +265,7 @@ export default function ChatbotPage() {
         username: storedUsername, // 添加用户名字段
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/chat`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/chat/messages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -360,7 +360,7 @@ export default function ChatbotPage() {
         // 如果是新对话，可能需要更新当前对话信息
         if (!currentConversationId) {
           // 重新获取对话列表，找到新创建的对话
-          const updatedResponse = await fetch(`${API_BASE_URL}/api/conversations/list/${storedUsername}`)
+          const updatedResponse = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/${storedUsername}`)
           const updatedData = await updatedResponse.json()
           const updatedConversations = updatedData.conversations || []
 

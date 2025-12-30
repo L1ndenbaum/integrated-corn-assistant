@@ -38,6 +38,20 @@ services:
     depends_on:
       - user-service
       - auth-service
+      - chat-service
+    restart: unless-stopped
+
+  chat-service:
+    image: ghcr.io/${IMAGE_PREFIX}-chat-service:latest
+    container_name: chat-service
+    ports:
+      - "8083:8083"
+    environment:
+      PORT: "8083"
+      DIFY_API_KEY: "${DIFY_API_KEY}"
+      DIFY_BASE_URL: "${DIFY_BASE_URL}"
+      ALL_PROXY: "${ALL_PROXY}"
+      PAGE_LIMIT: "20"
     restart: unless-stopped
 
   user-service:

@@ -31,7 +31,7 @@ export function ImageUpload({ onUpload, disabled = false }: ImageUploadProps) {
         formData.append("files", file)
       })
       formData.append("username", username)
-      const response = await fetch(`${API_BASE_URL}/api/file/upload`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/chat/files/upload`, {
         method: "POST",
         body: formData,
       })

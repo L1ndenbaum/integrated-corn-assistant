@@ -44,6 +44,9 @@ MYSQL_PASSWORD=YOUR_PASS
 MYSQL_HOST=host.docker.internal
 JWT_SECRET=CHANGE_ME
 IMAGE_PREFIX=l1ndenbaum/integrated-corn-assistant
+DIFY_API_KEY=CHANGE_ME
+DIFY_BASE_URL=https://api.dify.ai/v1
+ALL_PROXY=
 ```
 
 2) Build static assets first:
