@@ -17,10 +17,6 @@ docs
 scripts
 current_change
 
-services/*
-!services/user-service
-!services/user-service/**
-
 **/node_modules
 **/.next
 **/dist
