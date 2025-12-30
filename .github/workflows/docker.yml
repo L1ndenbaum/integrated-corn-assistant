@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+            fetch-depth: 0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -77,6 +79,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-auth-service:${{ github.sha }}
 
       - name: Setup Node.js
+        if: steps.changes.outputs.auth_service == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -84,11 +87,13 @@ jobs:
           cache-dependency-path: client/package-lock.json
 
       - name: Install frontend dependencies
+        if: steps.changes.outputs.auth_service == 'true'
         run: |
           cd client
           npm ci
 
       - name: Build frontend static resources
+        if: steps.changes.outputs.auth_service == 'true'
         run: |
           cd client
           chmod +x ./build.sh
