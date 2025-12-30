@@ -18,8 +18,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-            fetch-depth: 0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -31,55 +29,34 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Detect changes
-        id: changes
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            user_service:
-              - 'services/user-service/**'
-              - 'common/**'
-              - '.dockerignore'
-            auth_service:
-              - 'services/auth-service/**'
-            chat_service:
-              - 'services/chat-service/**'
-            weather_service:
-              - 'services/weather-service/**'
-            api_gateway:
-              - 'api-gateway/**'
-            static_server:
-              - 'static-server/**'
-            nginx:
-              - 'infra/nginx/**'
-
       - name: Compute image prefix
         run: |
           echo "IMAGE_PREFIX=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Build user-service
-        if: steps.changes.outputs.user_service == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
           file: services/user-service/Dockerfile
           push: true
+          cache-from: type=gha,scope=user-service
+          cache-to: type=gha,mode=max,scope=user-service
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-user-service:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-user-service:${{ github.sha }}
 
       - name: Build auth-service
-        if: steps.changes.outputs.auth_service == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ./services/auth-service
           push: true
+          cache-from: type=gha,scope=auth-service
+          cache-to: type=gha,mode=max,scope=auth-service
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-auth-service:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-auth-service:${{ github.sha }}
 
       - name: Setup Node.js
-        if: steps.changes.outputs.auth_service == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -87,64 +64,67 @@ jobs:
           cache-dependency-path: client/package-lock.json
 
       - name: Install frontend dependencies
-        if: steps.changes.outputs.auth_service == 'true'
         run: |
           cd client
           npm ci
 
       - name: Build frontend static resources
-        if: steps.changes.outputs.auth_service == 'true'
         run: |
           cd client
           chmod +x ./build.sh
           ./build.sh
 
       - name: Build static-server
-        if: steps.changes.outputs.static_server == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ./static-server
           push: true
+          cache-from: type=gha,scope=static-server
+          cache-to: type=gha,mode=max,scope=static-server
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-static-server:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-static-server:${{ github.sha }}
 
       - name: Build chat-service
-        if: steps.changes.outputs.chat_service == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ./services/chat-service
           push: true
+          cache-from: type=gha,scope=chat-service
+          cache-to: type=gha,mode=max,scope=chat-service
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-chat-service:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-chat-service:${{ github.sha }}
 
       - name: Build weather-service
-        if: steps.changes.outputs.weather_service == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ./services/weather-service
           push: true
+          cache-from: type=gha,scope=weather-service
+          cache-to: type=gha,mode=max,scope=weather-service
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-weather-service:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-weather-service:${{ github.sha }}
 
       - name: Build api-gateway
-        if: steps.changes.outputs.api_gateway == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ./api-gateway
           push: true
+          cache-from: type=gha,scope=api-gateway
+          cache-to: type=gha,mode=max,scope=api-gateway
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api-gateway:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api-gateway:${{ github.sha }}
 
       - name: Build nginx
-        if: steps.changes.outputs.nginx == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ./infra/nginx
           push: true
+          cache-from: type=gha,scope=nginx
+          cache-to: type=gha,mode=max,scope=nginx
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-nginx:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-nginx:${{ github.sha }}
