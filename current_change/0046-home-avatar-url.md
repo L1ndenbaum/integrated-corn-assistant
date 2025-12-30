@@ -1,0 +1,1 @@
+- Updated home page auth button to use profile `avatar_url` and persist it in localStorage.

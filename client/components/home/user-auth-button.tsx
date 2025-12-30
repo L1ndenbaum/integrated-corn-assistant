@@ -42,15 +42,20 @@ export function UserAuthButton() {
 
         if (response.ok) {
           const data = await response.json().catch(() => null)
-          const username = data?.user?.username || localStorage.getItem("username")
+          const user = data?.user ?? {}
+          const username = user.username || localStorage.getItem("username")
+          const avatarUrl = user.avatar_url || storedAvatar || ""
 
           if (username) {
             localStorage.setItem("username", username)
           }
-          if (storedAvatar) {
-            setAvatar(storedAvatar)
+
+          if (avatarUrl) {
+            localStorage.setItem("user_avatar", avatarUrl)
+            setAvatar(avatarUrl)
           } else {
-            setAvatar("/placeholder-user.jpg")
+            localStorage.removeItem("user_avatar")
+            setAvatar("")
           }
 
           setIsLoggedIn(true)
