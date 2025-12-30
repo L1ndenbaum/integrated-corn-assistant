@@ -16,6 +16,7 @@ deploy
 docs
 scripts
 current_change
+api-gateway
 
 **/node_modules
 **/.next

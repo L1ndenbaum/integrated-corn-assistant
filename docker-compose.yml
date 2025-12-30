@@ -20,6 +20,24 @@ services:
       - "80:80"
     depends_on:
       - static-server
+      - api-gateway
+    restart: unless-stopped
+
+  api-gateway:
+    image: ghcr.io/${IMAGE_PREFIX}-api-gateway:latest
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      AUTH_SERVICE_BASE_URL: "http://auth-service:8082"
+      USER_SERVICE_BASE_URL: "http://user-service:8081"
+      CHAT_SERVICE_BASE_URL: "http://chat-service:8083"
+      WEATHER_SERVICE_BASE_URL: "http://weather-service:8084"
+      DIAGNOSIS_SERVICE_BASE_URL: "http://diagnosis-service:8085"
+    depends_on:
+      - user-service
+      - auth-service
     restart: unless-stopped
 
   user-service:

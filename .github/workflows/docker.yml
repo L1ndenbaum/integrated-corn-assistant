@@ -79,6 +79,15 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-static-server:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-static-server:${{ github.sha }}
 
+      - name: Build api-gateway
+        uses: docker/build-push-action@v6
+        with:
+          context: ./api-gateway
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api-gateway:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api-gateway:${{ github.sha }}
+
       - name: Build nginx
         uses: docker/build-push-action@v6
         with:

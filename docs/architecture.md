@@ -60,8 +60,8 @@ service DNS name (for example, `user-service.default.svc.cluster.local:8081`).
   client/                 frontend (Next.js)
   diagnosis/              existing model code (to become diagnosis-service)
   static-server/          static site + avatar server (renamed from server-go)
+  api-gateway/            API gateway (Go + Gin)
   services/
-    api-gateway/          API gateway (to be created)
     user-service/         new Go module (sqlc)
     auth-service/         new Go module (sqlc + JWT)
     chat-service/         new Python service
