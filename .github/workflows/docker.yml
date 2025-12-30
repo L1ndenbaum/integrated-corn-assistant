@@ -6,6 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ toLower(github.repository) }}
 
 jobs:
   build:
@@ -36,8 +37,8 @@ jobs:
           file: services/user-service/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}-user-service:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ github.repository }}-user-service:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-user-service:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-user-service:${{ github.sha }}
 
       - name: Build auth-service
         uses: docker/build-push-action@v6
@@ -46,8 +47,8 @@ jobs:
           file: Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}-auth-service:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ github.repository }}-auth-service:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-auth-service:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-auth-service:${{ github.sha }}
 
       - name: Build static-server
         uses: docker/build-push-action@v6
@@ -56,8 +57,8 @@ jobs:
           file: Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}-static-server:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ github.repository }}-static-server:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-static-server:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-static-server:${{ github.sha }}
 
       - name: Build nginx
         uses: docker/build-push-action@v6
@@ -66,5 +67,5 @@ jobs:
           file: Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}-nginx:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ github.repository }}-nginx:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-nginx:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-nginx:${{ github.sha }}

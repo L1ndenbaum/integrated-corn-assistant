@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   static-server:
-    image: ghcr.io/l1ndenbaum/integrated-corn-assistant-static-server:latest
+    image: ghcr.io/${IMAGE_PREFIX}-static-server:latest
     container_name: static-server
     ports:
       - "8086:8086"
@@ -14,7 +14,7 @@ services:
     restart: unless-stopped
 
   nginx:
-    image: ghcr.io/l1ndenbaum/integrated-corn-assistant-nginx:latest
+    image: ghcr.io/${IMAGE_PREFIX}-nginx:latest
     container_name: corn-assistant-nginx
     ports:
       - "80:80"
@@ -23,7 +23,7 @@ services:
     restart: unless-stopped
 
   user-service:
-    image: ghcr.io/l1ndenbaum/integrated-corn-assistant-user-service:latest
+    image: ghcr.io/${IMAGE_PREFIX}-user-service:latest
     container_name: user-service
     ports:
       - "8081:8081"
@@ -37,7 +37,7 @@ services:
     restart: unless-stopped
 
   auth-service:
-    image: ghcr.io/l1ndenbaum/integrated-corn-assistant-auth-service:latest
+    image: ghcr.io/${IMAGE_PREFIX}-auth-service:latest
     container_name: auth-service
     ports:
       - "8082:8082"

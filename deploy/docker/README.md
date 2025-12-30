@@ -43,6 +43,7 @@ Docker Compose (bridge, MySQL on host)
 MYSQL_PASSWORD=YOUR_PASS
 MYSQL_HOST=host.docker.internal
 JWT_SECRET=CHANGE_ME
+IMAGE_PREFIX=l1ndenbaum/integrated-corn-assistant
 ```
 
 2) Build static assets first:
