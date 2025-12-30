@@ -47,7 +47,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./services/auth-service
-          file: Dockerfile
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-auth-service:latest
@@ -57,7 +56,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./static-server
-          file: Dockerfile
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-static-server:latest
@@ -67,7 +65,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./infra/nginx
-          file: Dockerfile
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-nginx:latest
