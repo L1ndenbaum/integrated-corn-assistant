@@ -1,19 +1,28 @@
-package main
+package handler
 
 import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-// 高德地图API密钥
-var AMapKey string = os.Getenv("AMapKey")
+type Handler struct {
+	apiKey string
+	client *http.Client
+}
+
+func New(apiKey string) *Handler {
+	return &Handler{
+		apiKey: apiKey,
+		client: &http.Client{Timeout: 10 * time.Second},
+	}
+}
 
 // IP定位响应结构体
-type IPLocationResponse struct {
+type ipLocationResponse struct {
 	Status    string `json:"status"`
 	Info      string `json:"info"`
 	InfoCode  string `json:"infocode"`
@@ -25,7 +34,7 @@ type IPLocationResponse struct {
 }
 
 // 预报单天
-type Cast struct {
+type cast struct {
 	Date         string `json:"date"`
 	Week         string `json:"week"`
 	DayWeather   string `json:"dayweather"`
@@ -39,16 +48,16 @@ type Cast struct {
 }
 
 // 预报天气
-type Forecast struct {
+type forecast struct {
 	City       string `json:"city"`
 	Adcode     string `json:"adcode"`
 	Province   string `json:"province"`
 	ReportTime string `json:"reporttime"`
-	Casts      []Cast `json:"casts"`
+	Casts      []cast `json:"casts"`
 }
 
 // 实况天气
-type Live struct {
+type live struct {
 	Province      string `json:"province"`
 	City          string `json:"city"`
 	Adcode        string `json:"adcode"`
@@ -61,19 +70,19 @@ type Live struct {
 }
 
 // 高德统一响应
-type WeatherResponse struct {
+type weatherResponse struct {
 	Status    string     `json:"status"`
 	Info      string     `json:"info"`
-	Lives     []Live     `json:"lives"`     // 实况天气
-	Forecasts []Forecast `json:"forecasts"` // 预报天气
+	Lives     []live     `json:"lives"`
+	Forecasts []forecast `json:"forecasts"`
 }
 
-// 获取IP定位信息
-func GetIPLocation(c *gin.Context) {
+// GetIPLocation 获取IP定位信息
+func (h *Handler) GetIPLocation(c *gin.Context) {
 	ip := c.ClientIP()
-	url := "https://restapi.amap.com/v3/ip?key=" + AMapKey + "&ip=" + ip
+	url := "https://restapi.amap.com/v3/ip?key=" + h.apiKey + "&ip=" + ip
 
-	resp, err := http.Get(url)
+	resp, err := h.client.Get(url)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取IP定位失败"})
 		return
@@ -81,8 +90,8 @@ func GetIPLocation(c *gin.Context) {
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
-	var result IPLocationResponse
-	json.Unmarshal(body, &result)
+	var result ipLocationResponse
+	_ = json.Unmarshal(body, &result)
 
 	if result.Status == "1" {
 		c.JSON(http.StatusOK, gin.H{
@@ -93,19 +102,21 @@ func GetIPLocation(c *gin.Context) {
 			"rectangle": result.Rectangle,
 			"ip":        ip,
 		})
-	} else {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Info})
+		return
 	}
+
+	c.JSON(http.StatusInternalServerError, gin.H{"error": result.Info})
 }
 
-func GetWeather(c *gin.Context) {
-	cityAdcode := c.Query("city")                      // 城市编码
-	extensions := c.DefaultQuery("extensions", "base") // 默认实时天气
+// GetWeather 获取天气
+func (h *Handler) GetWeather(c *gin.Context) {
+	cityAdcode := c.Query("city")
+	extensions := c.DefaultQuery("extensions", "base")
 
-	url := "https://restapi.amap.com/v3/weather/weatherInfo?key=" + AMapKey +
+	url := "https://restapi.amap.com/v3/weather/weatherInfo?key=" + h.apiKey +
 		"&city=" + cityAdcode + "&extensions=" + extensions
 
-	resp, err := http.Get(url)
+	resp, err := h.client.Get(url)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取天气失败"})
 		return
@@ -113,10 +124,9 @@ func GetWeather(c *gin.Context) {
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
-	var result WeatherResponse
+	var result weatherResponse
 	_ = json.Unmarshal(body, &result)
 
-	// 成功返回
 	if result.Status == "1" {
 		if extensions == "base" && len(result.Lives) > 0 {
 			live := result.Lives[0]
@@ -138,12 +148,11 @@ func GetWeather(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
 				"status":   "success",
 				"type":     "forecast",
-				"forecast": result.Forecasts[0], // 返回第一个城市的预报
+				"forecast": result.Forecasts[0],
 			})
 			return
 		}
 	}
 
-	// 失败
 	c.JSON(http.StatusInternalServerError, gin.H{"error": result.Info})
 }

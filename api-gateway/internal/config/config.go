@@ -9,8 +9,8 @@ type Config struct {
 	Port              string
 	AuthServiceURL     string
 	UserServiceURL     string
-	ChatServiceURL     string
-	WeatherServiceURL  string
+	ChatServiceURL      string
+	WeatherServiceURL   string
 	DiagnosisServiceURL string
 }
 
@@ -19,8 +19,8 @@ func Load() (Config, error) {
 		Port:               getEnvOrDefault("PORT", "8080"),
 		AuthServiceURL:     getEnvOrDefault("AUTH_SERVICE_BASE_URL", "http://auth-service:8082"),
 		UserServiceURL:     getEnvOrDefault("USER_SERVICE_BASE_URL", "http://user-service:8081"),
-		ChatServiceURL:     getEnvOrDefault("CHAT_SERVICE_BASE_URL", "http://chat-service:8083"),
-		WeatherServiceURL:  getEnvOrDefault("WEATHER_SERVICE_BASE_URL", "http://weather-service:8084"),
+		ChatServiceURL:      getEnvOrDefault("CHAT_SERVICE_BASE_URL", "http://chat-service:8083"),
+		WeatherServiceURL:   getEnvOrDefault("WEATHER_SERVICE_BASE_URL", "http://weather-service:8084"),
 		DiagnosisServiceURL: getEnvOrDefault("DIAGNOSIS_SERVICE_BASE_URL", "http://diagnosis-service:8085"),
 	}
 

@@ -54,6 +54,16 @@ services:
       PAGE_LIMIT: "20"
     restart: unless-stopped
 
+  weather-service:
+    image: ghcr.io/${IMAGE_PREFIX}-weather-service:latest
+    container_name: weather-service
+    ports:
+      - "8084:8084"
+    environment:
+      PORT: "8084"
+      AMAP_KEY: "${AMAP_KEY}"
+    restart: unless-stopped
+
   user-service:
     image: ghcr.io/${IMAGE_PREFIX}-user-service:latest
     container_name: user-service

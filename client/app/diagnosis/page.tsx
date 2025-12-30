@@ -77,7 +77,7 @@ export default function DiagnosisPage() {
     setIsLoadingLocation(true)
     setError(null)
 
-    fetch("/api/geo/location")
+    fetch(`${API_BASE_URL}/api/v1/geo/ip`)
       .then((response) => response.json())
       .then((data) => {
         if (data.status === "success") {
@@ -98,7 +98,7 @@ export default function DiagnosisPage() {
     setIsLoadingWeather(true)
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/geo/weather?city=${cityAdcode}`)
+      const response = await fetch(`${API_BASE_URL}/api/v1/geo/weather?city=${cityAdcode}`)
       const data = await response.json()
 
       if (data.status === "success" && data.type === "live") {

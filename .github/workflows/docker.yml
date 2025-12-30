@@ -42,6 +42,8 @@ jobs:
               - 'services/auth-service/**'
             chat_service:
               - 'services/chat-service/**'
+            weather_service:
+              - 'services/weather-service/**'
             api_gateway:
               - 'api-gateway/**'
             static_server:
@@ -111,6 +113,16 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-chat-service:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-chat-service:${{ github.sha }}
+
+      - name: Build weather-service
+        if: steps.changes.outputs.weather_service == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/weather-service
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-weather-service:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-weather-service:${{ github.sha }}
 
       - name: Build api-gateway
         if: steps.changes.outputs.api_gateway == 'true'
