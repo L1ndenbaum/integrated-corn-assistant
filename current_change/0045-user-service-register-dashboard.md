@@ -1,0 +1,4 @@
+- Added user-service registration, password change, and avatar update endpoints under `/api/v1/user`.
+- Updated user-service profile response to include `avatar_url` only and wired avatar storage via `AVATAR_DIR`.
+- Updated dashboard hook to call new profile/password/avatar endpoints with cookie credentials.
+- Mounted avatars volume for user-service in `docker-compose.yml`.

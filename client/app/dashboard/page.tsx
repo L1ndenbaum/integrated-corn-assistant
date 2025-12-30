@@ -159,7 +159,7 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
-              <UserAvatarSection username={profile?.username ?? username} avatarUrl={profile?.avatar} isSaving={isSavingAvatar} onSave={handleAvatarSave} />
+              <UserAvatarSection username={profile?.username ?? username} avatarUrl={profile?.avatarUrl} isSaving={isSavingAvatar} onSave={handleAvatarSave} />
             </motion.div>
 
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.4 }} className="lg:col-span-2">

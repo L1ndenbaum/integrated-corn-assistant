@@ -8,11 +8,11 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 
+	"github.com/L1ndenbaum/integrated-corn-assistant/common/jwtauth"
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/user-service/internal/config"
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/user-service/internal/handler"
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/user-service/internal/server"
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/user-service/internal/store"
-	"github.com/L1ndenbaum/integrated-corn-assistant/common/jwtauth"
 )
 
 func main() {
@@ -42,7 +42,7 @@ func main() {
 
 	userStore := store.NewMySQLStore(db)
 	internalHandler := handler.NewInternal(userStore)
-	userHandler := handler.NewUser(userStore)
+	userHandler := handler.NewUser(userStore, cfg.AvatarDir)
 
 	router := server.NewRouter(internalHandler, userHandler, jwtVerifier)
 

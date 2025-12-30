@@ -10,6 +10,7 @@ type Config struct {
 	DatabaseDSN string
 	JWTSecret   string
 	JWTIssuer   string
+	AvatarDir   string
 }
 
 func Load() (Config, error) {
@@ -18,6 +19,7 @@ func Load() (Config, error) {
 		DatabaseDSN: os.Getenv("USER_DB_DSN"),
 		JWTSecret:   os.Getenv("JWT_SECRET"),
 		JWTIssuer:   getEnvOrDefault("JWT_ISSUER", "corn-assistant"),
+		AvatarDir:   getEnvOrDefault("AVATAR_DIR", "/app/avatars"),
 	}
 
 	if cfg.DatabaseDSN == "" {

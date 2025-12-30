@@ -3,7 +3,7 @@ import { useStoredUsername } from "./use-stored-username";
 
 export interface UserProfile {
   username: string;
-  avatar: string;
+  avatarUrl: string;
 }
 
 interface ChangePasswordPayload {
@@ -20,33 +20,25 @@ export function useUserProfile() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (username === undefined) {
-      return;
-    }
-
-    if (!username) {
-      setProfile(null);
-      setError("未找到用户信息");
-      setIsLoadingProfile(false);
-      return;
-    }
-
     let isCancelled = false;
     const fetchProfile = async () => {
       setIsLoadingProfile(true);
       setError(null);
       try {
-        const response = await fetch(`${API_BASE_URL}/api/user/info/${username}`);
-        const data = await response.json();
+        const response = await fetch(`${API_BASE_URL}/api/v1/user/profile`, {
+          credentials: "include",
+        });
+        const data = await response.json().catch(() => ({}));
 
         if (!response.ok) {
-          throw new Error(data.message || "获取用户信息失败");
+          throw new Error(data.error || data.message || "获取用户信息失败");
         }
 
         if (!isCancelled) {
+          const user = data.user ?? {};
           setProfile({
-            username: data.data.username,
-            avatar: data.data.avatar || "",
+            username: user.username || "",
+            avatarUrl: user.avatar_url || "",
           });
         }
       } catch (err) {
@@ -67,59 +59,52 @@ export function useUserProfile() {
     return () => {
       isCancelled = true;
     };
-  }, [username]);
+  }, []);
 
   const changePassword = useCallback(
     async ({ currentPassword, newPassword }: ChangePasswordPayload) => {
-      if (!username) {
-        throw new Error("未找到用户信息");
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/user/change-password`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/user/password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
-          username,
-          currentPassword,
-          newPassword,
+          current_password: currentPassword,
+          new_password: newPassword,
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(data.message || "密码修改失败");
+        throw new Error(data.error || data.message || "密码修改失败");
       }
     },
-    [username],
+    [],
   );
 
   const updateAvatar = useCallback(
     async (file: File) => {
-      if (!username) {
-        throw new Error("未找到用户信息");
-      }
-
       const formData = new FormData();
       formData.append("avatar", file);
-      formData.append("username", username);
 
-      const response = await fetch(`${API_BASE_URL}/api/user/update-avatar`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/user/avatar`, {
         method: "POST",
         body: formData,
+        credentials: "include",
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(data.message || "头像更新失败");
+        throw new Error(data.error || data.message || "头像更新失败");
       }
 
-      setProfile((prev) => (prev ? { ...prev, avatar: data.avatarUrl || prev.avatar } : prev));
+      const avatarUrl = data.avatar_url || "";
+      setProfile((prev) => (prev ? { ...prev, avatarUrl: avatarUrl || prev.avatarUrl } : prev));
     },
-    [username],
+    [],
   );
 
   return {

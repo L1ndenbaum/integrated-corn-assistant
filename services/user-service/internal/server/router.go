@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/L1ndenbaum/integrated-corn-assistant/services/user-service/internal/handler"
 	"github.com/L1ndenbaum/integrated-corn-assistant/common/jwtauth"
+	"github.com/L1ndenbaum/integrated-corn-assistant/services/user-service/internal/handler"
 )
 
 func NewRouter(internal *handler.InternalHandler, users *handler.UserHandler, verifier *jwtauth.Verifier) *gin.Engine {
@@ -31,9 +31,16 @@ func NewRouter(internal *handler.InternalHandler, users *handler.UserHandler, ve
 	}
 
 	userGroup := router.Group("/api/v1/user")
-	userGroup.Use(jwtauth.Middleware(verifier))
 	{
-		userGroup.GET("/profile", users.Profile)
+		userGroup.POST("/register", users.Register)
+	}
+
+	authedUserGroup := router.Group("/api/v1/user")
+	authedUserGroup.Use(jwtauth.Middleware(verifier))
+	{
+		authedUserGroup.GET("/profile", users.Profile)
+		authedUserGroup.POST("/password", users.ChangePassword)
+		authedUserGroup.POST("/avatar", users.UpdateAvatar)
 	}
 
 	return router
