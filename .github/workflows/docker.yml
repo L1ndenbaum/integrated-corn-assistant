@@ -29,11 +29,32 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Detect changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            user_service:
+              - 'services/user-service/**'
+              - 'common/**'
+              - '.dockerignore'
+            auth_service:
+              - 'services/auth-service/**'
+            chat_service:
+              - 'services/chat-service/**'
+            api_gateway:
+              - 'api-gateway/**'
+            static_server:
+              - 'static-server/**'
+            nginx:
+              - 'infra/nginx/**'
+
       - name: Compute image prefix
         run: |
           echo "IMAGE_PREFIX=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Build user-service
+        if: steps.changes.outputs.user_service == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -44,6 +65,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-user-service:${{ github.sha }}
 
       - name: Build auth-service
+        if: steps.changes.outputs.auth_service == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ./services/auth-service
@@ -71,6 +93,7 @@ jobs:
           ./build.sh
 
       - name: Build static-server
+        if: steps.changes.outputs.static_server == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ./static-server
@@ -80,6 +103,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-static-server:${{ github.sha }}
 
       - name: Build chat-service
+        if: steps.changes.outputs.chat_service == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ./services/chat-service
@@ -89,6 +113,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-chat-service:${{ github.sha }}
 
       - name: Build api-gateway
+        if: steps.changes.outputs.api_gateway == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ./api-gateway
@@ -98,6 +123,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-api-gateway:${{ github.sha }}
 
       - name: Build nginx
+        if: steps.changes.outputs.nginx == 'true'
         uses: docker/build-push-action@v6
         with:
           context: ./infra/nginx

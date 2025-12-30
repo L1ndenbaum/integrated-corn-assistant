@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"time"
 )
 
 type Proxy struct {
@@ -29,6 +30,7 @@ func New(target string) (*Proxy, error) {
 		originalDirector(req)
 		req.Host = parsed.Host
 	}
+	reverse.FlushInterval = 100 * time.Millisecond
 
 	reverse.ErrorHandler = func(w http.ResponseWriter, _ *http.Request, _ error) {
 		w.Header().Set("Content-Type", "application/json")
