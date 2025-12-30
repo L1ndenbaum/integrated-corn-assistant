@@ -47,6 +47,13 @@ type updateAvatarResponse struct {
 	AvatarURL string `json:"avatar_url"`
 }
 
+var (
+	upperRegex = regexp.MustCompile(`[A-Z]`)
+	lowerRegex = regexp.MustCompile(`[a-z]`)
+	digitRegex = regexp.MustCompile(`[0-9]`)
+	hanRegex   = regexp.MustCompile(`[\p{Han}]`)
+)
+
 func NewUser(users store.UserStore, avatarDir string) *UserHandler {
 	return &UserHandler{
 		users:     users,
@@ -311,16 +318,16 @@ func validatePassword(password string) error {
 		return errors.New("密码长度不能超过20位")
 	}
 
-	if !regexp.MustCompile(`[A-Z]`).MatchString(password) {
+	if !upperRegex.MatchString(password) {
 		return errors.New("密码必须包含至少一个大写字母")
 	}
-	if !regexp.MustCompile(`[a-z]`).MatchString(password) {
+	if !lowerRegex.MatchString(password) {
 		return errors.New("密码必须包含至少一个小写字母")
 	}
-	if !regexp.MustCompile(`[0-9]`).MatchString(password) {
+	if !digitRegex.MatchString(password) {
 		return errors.New("密码必须包含至少一个数字")
 	}
-	if regexp.MustCompile(`[\u4e00-\u9fa5]`).MatchString(password) {
+	if hanRegex.MatchString(password) {
 		return errors.New("密码不能包含中文字符")
 	}
 	return nil
