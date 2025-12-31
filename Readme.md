@@ -4,53 +4,41 @@
 git clone https://github.com/L1ndenbaum/integrated-corn-assistant.git
 ```
 
-## Environment
-
-### Environment Variables
-
+## Create MySQL Schema
 ```bash
-echo "export DIFY_API_KEY=your-dify-api-key" >> ~/.bashrc
-echo "export AMapKey=your-GaoDe-api-key" >> ~/.bashrc
-echo "export MySQLPassword=your-mysql-passwd" >> ~/.bashrc
-echo "export natappauthtoken=your-natapp-authtoken" >> ~/.bashrc
-source ~/.bashrc
+mysql -u root -p < services/user-service/db/migrations/000001_create_users.up.sql
+mysql -u root -p < services/user-service/db/migrations/000001_create_refresh_tokens.up.sql
 ```
 
-### npm
+### MySQL User
+CREATE USER 'corn-assistant-user'@'%' IDENTIFIED BY 'USER_SERVICE_PASSWORD';
+CREATE USER 'corn-assistant-auth'@'%' IDENTIFIED BY 'AUTH_SERVICE_PASSWORD';
+GRANT ALL PRIVILEGES ON corn_assistant_user.* TO 'corn-assistant-user'@'%';
+GRANT ALL PRIVILEGES ON corn_assistant_auth.* TO 'corn-assistant-auth'@'%';
+### Environment Variables In Docker
 
 ```bash
-cd client
-npm install
+cp .env.example .env
+
+# Edit .env file
+IMAGE_PREFIX=l1ndenbaum/integrated-corn-assistant
+MYSQL_HOST=127.0.0.1
+MYSQL_PASSWORD=CHANGE_ME
+JWT_SECRET=CHANGE_ME
+DIFY_API_KEY=CHANGE_ME
+DIFY_BASE_URL=https://api.dify.ai/v1
+ALL_PROXY=
+AMAP_KEY=CHANGE_ME
 ```
 
-### python
+## Pull services from GHCR and deploy
+docker compose pull
+docker compose up -d
 
-```bash
-python -m venv your-venv-name
-source your-venv-name/bin/activate
-cd server
-pip install -r requirements.txt
-```
-
-## Build
-
-```bash
-cd client
-chmod +x ./build.sh
-./build.sh
-```
-
-## Run
-
-```bash
-chmod +x ./natapp
-./natapp -authtoken=$natappauthtoken
-cd server
-python app.py
-```
-
-## Natapp内网穿透简单部署
-
-访问[Natapp官网](https://natapp.cn/)
-
-在client/.env.local中，配置你的Natapp Tunnel地址。
+## Pull diagnosis service in a GPU server and deploy container
+docker pull ghcr.io/l1ndenbaum/integrated-corn-assistant-diagnosis-service:latest
+docker run -d \
+  --name diagnosis-service \
+  -p CHANGE-TO-YOUR-PORT:DOCKER-ENV-PORT \
+  -e PORT=DOCKER-ENV-PORT \
+  ghcr.io/l1ndenbaum/integrated-corn-assistant-diagnosis-service:latest 
