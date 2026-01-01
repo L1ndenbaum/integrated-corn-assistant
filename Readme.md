@@ -1,5 +1,4 @@
 ## Clone
-
 ```bash
 git clone https://github.com/L1ndenbaum/integrated-corn-assistant.git
 ```
@@ -11,12 +10,14 @@ mysql -u root -p < services/user-service/db/migrations/000001_create_refresh_tok
 ```
 
 ### MySQL User
+```sql
 CREATE USER 'corn-assistant-user'@'%' IDENTIFIED BY 'USER_SERVICE_PASSWORD';
 CREATE USER 'corn-assistant-auth'@'%' IDENTIFIED BY 'AUTH_SERVICE_PASSWORD';
 GRANT ALL PRIVILEGES ON corn_assistant_user.* TO 'corn-assistant-user'@'%';
 GRANT ALL PRIVILEGES ON corn_assistant_auth.* TO 'corn-assistant-auth'@'%';
-### Environment Variables In Docker
+```
 
+### Environment Variables In Docker
 ```bash
 cp .env.example .env
 
@@ -32,13 +33,19 @@ AMAP_KEY=CHANGE_ME
 ```
 
 ## Pull services from GHCR and deploy
+```bash
 docker compose pull
 docker compose up -d
+```
 
 ## Pull diagnosis service in a GPU server and deploy container
+```bash
 docker pull ghcr.io/l1ndenbaum/integrated-corn-assistant-diagnosis-service:latest
 docker run -d \
-  --name diagnosis-service \
-  -p CHANGE-TO-YOUR-PORT:DOCKER-ENV-PORT \
-  -e PORT=DOCKER-ENV-PORT \
-  ghcr.io/l1ndenbaum/integrated-corn-assistant-diagnosis-service:latest 
+    --gpus all \
+    --name diagnosis-service \
+    -p CHANGE-TO-YOUR-PORT:DOCKER-ENV-PORT \
+    -e CORS_ORIGINS=CHANGE_ME \
+    -e PORT=DOCKER-ENV-PORT \
+    ghcr.io/l1ndenbaum/integrated-corn-assistant-diagnosis-service:latest
+```
