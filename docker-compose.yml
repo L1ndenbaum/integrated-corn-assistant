@@ -34,7 +34,7 @@ services:
       USER_SERVICE_BASE_URL: "http://user-service:8081"
       CHAT_SERVICE_BASE_URL: "http://chat-service:8083"
       WEATHER_SERVICE_BASE_URL: "http://weather-service:8084"
-      DIAGNOSIS_SERVICE_BASE_URL: "http://diagnosis-service:8085"
+      DIAGNOSIS_SERVICE_BASE_URL: "${DIAGNOSIS_SERVICE_BASE_URL}"
     depends_on:
       - user-service
       - auth-service

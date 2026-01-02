@@ -1,0 +1,2 @@
+- Added DIAGNOSIS_SERVICE_BASE_URL to .env.example and wired api-gateway to use it in docker-compose.
+- Updated Readme.md with diagnosis gateway routing and JWT env requirements for diagnosis-service.
