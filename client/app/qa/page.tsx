@@ -68,7 +68,9 @@ export default function ChatbotPage() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/user/${storedUsername}`)
+      const response = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/user/${storedUsername}`, {
+        credentials: "include",
+      })
       const data = await response.json()
       setConversations(data.conversations || [])
     } catch (error) {
@@ -86,7 +88,9 @@ export default function ChatbotPage() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/${conversationId}/history?username=${storedUsername}`)
+      const response = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/${conversationId}/history?username=${storedUsername}`, {
+        credentials: "include",
+      })
       const data = await response.json()
 
       // 将后端返回的数据转换为前端的 Message 格式
@@ -145,6 +149,7 @@ export default function ChatbotPage() {
     try {
       await fetch(`${API_BASE_URL}/api/v1/chat/conversations/${conversationId}?username=${storedUsername}`, {
         method: "DELETE",
+        credentials: "include",
       })
       setConversations((prev) => prev.filter((conv) => conv.id !== conversationId))
       if (currentConversationId === conversationId) {
@@ -188,6 +193,7 @@ export default function ChatbotPage() {
       const response = await fetch(`${API_BASE_URL}/api/v1/chat/files/upload`, {
         method: "POST",
         body: formData,
+        credentials: "include",
       })
 
       if (!response.ok) {
@@ -270,6 +276,7 @@ export default function ChatbotPage() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify(requestData),
         signal: abortControllerRef.current.signal,
       })
@@ -360,7 +367,9 @@ export default function ChatbotPage() {
         // 如果是新对话，可能需要更新当前对话信息
         if (!currentConversationId) {
           // 重新获取对话列表，找到新创建的对话
-          const updatedResponse = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/user/${storedUsername}`)
+          const updatedResponse = await fetch(`${API_BASE_URL}/api/v1/chat/conversations/user/${storedUsername}`, {
+            credentials: "include",
+          })
           const updatedData = await updatedResponse.json()
           const updatedConversations = updatedData.conversations || []
 

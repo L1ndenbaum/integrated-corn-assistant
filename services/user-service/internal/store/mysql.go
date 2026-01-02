@@ -3,159 +3,76 @@ package store
 import (
 	"context"
 	"database/sql"
-	"errors"
+	"strconv"
 	"time"
+
+	userdb "github.com/L1ndenbaum/integrated-corn-assistant/services/user-service/internal/db"
 )
 
+const defaultAvatarKey = "/avatar/placeholder-user.jpg"
+
 type MySQLStore struct {
-	db *sql.DB
+	queries *userdb.Queries
 }
 
 func NewMySQLStore(db *sql.DB) *MySQLStore {
-	return &MySQLStore{db: db}
+	return &MySQLStore{queries: userdb.New(db)}
 }
 
 func (s *MySQLStore) GetActiveUserByUsername(ctx context.Context, username string) (UserRecord, error) {
-	query := `SELECT
-    user_id,
-    user_uuid,
-    username,
-    email,
-    phone,
-    password_hash,
-    user_privilege,
-    user_status,
-    avatar_path,
-    mfa_enabled,
-    last_login_at,
-    last_login_ip,
-    locked_until
-FROM users
-WHERE username = ?
-    AND user_status = 1`
-
-	row := s.db.QueryRowContext(ctx, query, username)
-	return scanUser(row)
+	user, err := s.queries.GetActiveUserByUsername(ctx, username)
+	if err != nil {
+		return UserRecord{}, err
+	}
+	return toUserRecord(user), nil
 }
 
 func (s *MySQLStore) GetUserByUsername(ctx context.Context, username string) (UserRecord, error) {
-	query := `SELECT
-    user_id,
-    user_uuid,
-    username,
-    email,
-    phone,
-    password_hash,
-    user_privilege,
-    user_status,
-    avatar_path,
-    mfa_enabled,
-    last_login_at,
-    last_login_ip,
-    locked_until
-FROM users
-WHERE username = ?`
-
-	row := s.db.QueryRowContext(ctx, query, username)
-	return scanUser(row)
+	user, err := s.queries.GetUserByUsername(ctx, username)
+	if err != nil {
+		return UserRecord{}, err
+	}
+	return toUserRecord(user), nil
 }
 
 func (s *MySQLStore) GetActiveUserByEmail(ctx context.Context, email string) (UserRecord, error) {
-	query := `SELECT
-    user_id,
-    user_uuid,
-    username,
-    email,
-    phone,
-    password_hash,
-    user_privilege,
-    user_status,
-    avatar_path,
-    mfa_enabled,
-    last_login_at,
-    last_login_ip,
-    locked_until
-FROM users
-WHERE email = ?
-    AND user_status = 1`
-
-	row := s.db.QueryRowContext(ctx, query, email)
-	return scanUser(row)
+	user, err := s.queries.GetActiveUserByEmail(ctx, toNullString(email))
+	if err != nil {
+		return UserRecord{}, err
+	}
+	return toUserRecord(user), nil
 }
 
 func (s *MySQLStore) GetActiveUserByPhone(ctx context.Context, phone string) (UserRecord, error) {
-	query := `SELECT
-    user_id,
-    user_uuid,
-    username,
-    email,
-    phone,
-    password_hash,
-    user_privilege,
-    user_status,
-    avatar_path,
-    mfa_enabled,
-    last_login_at,
-    last_login_ip,
-    locked_until
-FROM users
-WHERE phone = ?
-    AND user_status = 1`
-
-	row := s.db.QueryRowContext(ctx, query, phone)
-	return scanUser(row)
+	user, err := s.queries.GetActiveUserByPhone(ctx, toNullString(phone))
+	if err != nil {
+		return UserRecord{}, err
+	}
+	return toUserRecord(user), nil
 }
 
 func (s *MySQLStore) GetUserByUUID(ctx context.Context, uuidBytes []byte) (UserRecord, error) {
-	query := `SELECT
-    user_id,
-    user_uuid,
-    username,
-    email,
-    phone,
-    password_hash,
-    user_privilege,
-    user_status,
-    avatar_path,
-    mfa_enabled,
-    last_login_at,
-    last_login_ip,
-    locked_until
-FROM users
-WHERE user_uuid = ?`
-
-	row := s.db.QueryRowContext(ctx, query, uuidBytes)
-	return scanUser(row)
+	user, err := s.queries.GetUserByUUID(ctx, uuidBytes)
+	if err != nil {
+		return UserRecord{}, err
+	}
+	return toUserRecord(user), nil
 }
 
 func (s *MySQLStore) CreateUser(ctx context.Context, params CreateUserParams) (int64, error) {
-	query := `INSERT INTO users (
-    user_uuid,
-    username,
-    email,
-    phone,
-    password_hash,
-    user_privilege,
-    user_balance,
-    user_status,
-    avatar_path,
-    mfa_enabled
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-
-	result, err := s.db.ExecContext(
-		ctx,
-		query,
-		params.UserUUID,
-		params.Username,
-		params.Email,
-		params.Phone,
-		params.PasswordHash,
-		params.UserPrivilege,
-		params.UserBalance,
-		params.UserStatus,
-		params.AvatarPath,
-		params.MFAEnabled,
-	)
+	avatarPath := normalizeAvatarPath(params.AvatarPath)
+	result, err := s.queries.CreateUser(ctx, userdb.CreateUserParams{
+		UserUuid:      params.UserUUID,
+		Username:      params.Username,
+		Email:         toNullStringPtr(params.Email),
+		Phone:         toNullStringPtr(params.Phone),
+		PasswordHash:  params.PasswordHash,
+		UserPrivilege: int8(params.UserPrivilege),
+		UserBalance:   strconv.FormatFloat(params.UserBalance, 'f', 2, 64),
+		UserStatus:    int8(params.UserStatus),
+		AvatarPath:    avatarPath,
+		MfaEnabled:    boolToTinyInt(params.MFAEnabled),
+	})
 	if err != nil {
 		return 0, err
 	}
@@ -163,132 +80,101 @@ func (s *MySQLStore) CreateUser(ctx context.Context, params CreateUserParams) (i
 }
 
 func (s *MySQLStore) UpdatePasswordHash(ctx context.Context, userID int64, passwordHash string) error {
-	query := `UPDATE users
-SET password_hash = ?, password_updated_at = NOW()
-WHERE user_id = ?`
-
-	_, err := s.db.ExecContext(ctx, query, passwordHash, userID)
-	return err
+	return s.queries.UpdatePasswordHash(ctx, userdb.UpdatePasswordHashParams{
+		PasswordHash: passwordHash,
+		UserID:       int32(userID),
+	})
 }
 
 func (s *MySQLStore) UpdateAvatarPath(ctx context.Context, userID int64, avatarPath *string) error {
-	query := `UPDATE users
-SET avatar_path = ?
-WHERE user_id = ?`
-
-	_, err := s.db.ExecContext(ctx, query, avatarPath, userID)
-	return err
+	return s.queries.UpdateAvatarPath(ctx, userdb.UpdateAvatarPathParams{
+		AvatarPath: normalizeAvatarPath(avatarPath),
+		UserID:     int32(userID),
+	})
 }
 
 func (s *MySQLStore) UpdateLoginSuccess(ctx context.Context, userID int64, ip string) error {
-	query := `UPDATE users
-SET last_login_at = NOW(),
-    last_login_ip = ?,
-    failed_login_attempts = 0,
-    locked_until = NULL
-WHERE user_id = ?`
-
-	_, err := s.db.ExecContext(ctx, query, ip, userID)
-	return err
+	return s.queries.UpdateLoginSuccess(ctx, userdb.UpdateLoginSuccessParams{
+		LastLoginIp: toNullString(ip),
+		UserID:      int32(userID),
+	})
 }
 
 func (s *MySQLStore) IncrementFailedLoginAttempts(ctx context.Context, userID int64) (int, error) {
-	query := `UPDATE users
-SET failed_login_attempts = failed_login_attempts + 1
-WHERE user_id = ?`
-
-	if _, err := s.db.ExecContext(ctx, query, userID); err != nil {
+	if err := s.queries.IncrementFailedLoginAttempts(ctx, int32(userID)); err != nil {
 		return 0, err
 	}
-
-	row := s.db.QueryRowContext(ctx, "SELECT failed_login_attempts FROM users WHERE user_id = ?", userID)
-	var attempts int
-	if err := row.Scan(&attempts); err != nil {
+	user, err := s.queries.GetUserByID(ctx, int32(userID))
+	if err != nil {
 		return 0, err
 	}
-	return attempts, nil
+	return int(user.FailedLoginAttempts), nil
 }
 
 func (s *MySQLStore) SetLockedUntil(ctx context.Context, userID int64, lockedUntil time.Time) error {
-	query := `UPDATE users
-SET locked_until = ?
-WHERE user_id = ?`
-
-	_, err := s.db.ExecContext(ctx, query, lockedUntil, userID)
-	return err
+	return s.queries.SetLockedUntil(ctx, userdb.SetLockedUntilParams{
+		LockedUntil: sql.NullTime{Time: lockedUntil, Valid: true},
+		UserID:      int32(userID),
+	})
 }
 
-type scanner interface {
-	Scan(dest ...any) error
-}
-
-func scanUser(row scanner) (UserRecord, error) {
-	var (
-		userID        int64
-		userUUID      []byte
-		username      string
-		email         sql.NullString
-		phone         sql.NullString
-		passwordHash  string
-		userPrivilege int32
-		userStatus    int32
-		avatarPath    sql.NullString
-		mfaEnabled    bool
-		lastLoginAt   sql.NullTime
-		lastLoginIP   sql.NullString
-		lockedUntil   sql.NullTime
-	)
-
-	if err := row.Scan(
-		&userID,
-		&userUUID,
-		&username,
-		&email,
-		&phone,
-		&passwordHash,
-		&userPrivilege,
-		&userStatus,
-		&avatarPath,
-		&mfaEnabled,
-		&lastLoginAt,
-		&lastLoginIP,
-		&lockedUntil,
-	); err != nil {
-		return UserRecord{}, err
-	}
-
+func toUserRecord(user userdb.User) UserRecord {
 	record := UserRecord{
-		UserID:        userID,
-		UserUUID:      userUUID,
-		Username:      username,
-		PasswordHash:  passwordHash,
-		UserPrivilege: userPrivilege,
-		UserStatus:    userStatus,
-		MFAEnabled:    mfaEnabled,
+		UserID:        int64(user.UserID),
+		UserUUID:      user.UserUuid,
+		Username:      user.Username,
+		PasswordHash:  user.PasswordHash,
+		UserPrivilege: int32(user.UserPrivilege),
+		UserStatus:    int32(user.UserStatus),
+		MFAEnabled:    user.MfaEnabled != 0,
 	}
 
-	if email.Valid {
-		record.Email = &email.String
+	if user.Email.Valid {
+		record.Email = &user.Email.String
 	}
-	if phone.Valid {
-		record.Phone = &phone.String
+	if user.Phone.Valid {
+		record.Phone = &user.Phone.String
 	}
-	if avatarPath.Valid {
-		record.AvatarPath = &avatarPath.String
+	if user.AvatarPath != "" {
+		record.AvatarPath = &user.AvatarPath
 	}
-	if lastLoginAt.Valid {
-		record.LastLoginAt = &lastLoginAt.Time
+	if user.LastLoginAt.Valid {
+		record.LastLoginAt = &user.LastLoginAt.Time
 	}
-	if lastLoginIP.Valid {
-		record.LastLoginIP = &lastLoginIP.String
+	if user.LastLoginIp.Valid {
+		record.LastLoginIP = &user.LastLoginIp.String
 	}
-	if lockedUntil.Valid {
-		record.LockedUntil = &lockedUntil.Time
+	if user.LockedUntil.Valid {
+		record.LockedUntil = &user.LockedUntil.Time
 	}
 
-	return record, nil
+	return record
 }
 
-func isNotFound(err error) bool {
-	return errors.Is(err, sql.ErrNoRows)
+func toNullString(value string) sql.NullString {
+	if value == "" {
+		return sql.NullString{Valid: false}
+	}
+	return sql.NullString{String: value, Valid: true}
+}
+
+func toNullStringPtr(value *string) sql.NullString {
+	if value == nil || *value == "" {
+		return sql.NullString{Valid: false}
+	}
+	return sql.NullString{String: *value, Valid: true}
+}
+
+func boolToTinyInt(value bool) int8 {
+	if value {
+		return 1
+	}
+	return 0
+}
+
+func normalizeAvatarPath(avatarPath *string) string {
+	if avatarPath == nil || *avatarPath == "" {
+		return defaultAvatarKey
+	}
+	return *avatarPath
 }

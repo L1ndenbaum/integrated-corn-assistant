@@ -6,10 +6,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/L1ndenbaum/integrated-corn-assistant/common/jwtauth"
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/chat-service/internal/handler"
 )
 
-func NewRouter(handler *handler.Handler) *gin.Engine {
+func NewRouter(handler *handler.Handler, verifier *jwtauth.Verifier) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())
 
@@ -21,13 +22,17 @@ func NewRouter(handler *handler.Handler) *gin.Engine {
 		})
 	})
 
-	router.POST("/api/v1/chat/messages", handler.Chat)
-	router.GET("/api/v1/chat/suggestions/:message_id", handler.GetNextProblemSuggestion)
-	router.POST("/api/v1/chat/files/upload", handler.UploadFiles)
+	chatGroup := router.Group("/api/v1/chat")
+	chatGroup.Use(jwtauth.Middleware(verifier))
+	{
+		chatGroup.POST("/messages", handler.Chat)
+		chatGroup.GET("/suggestions/:message_id", handler.GetNextProblemSuggestion)
+		chatGroup.POST("/files/upload", handler.UploadFiles)
 
-	router.GET("/api/v1/chat/conversations/user/:username", handler.ListConversations)
-	router.GET("/api/v1/chat/conversations/:conversation_id/history", handler.GetChatHistory)
-	router.DELETE("/api/v1/chat/conversations/:conversation_id", handler.DeleteConversation)
+		chatGroup.GET("/conversations/user/:username", handler.ListConversations)
+		chatGroup.GET("/conversations/:conversation_id/history", handler.GetChatHistory)
+		chatGroup.DELETE("/conversations/:conversation_id", handler.DeleteConversation)
+	}
 
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "接口不存在"})

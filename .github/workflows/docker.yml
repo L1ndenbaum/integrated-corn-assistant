@@ -48,7 +48,8 @@ jobs:
       - name: Build auth-service
         uses: docker/build-push-action@v6
         with:
-          context: ./services/auth-service
+          context: .
+          file: services/auth-service/Dockerfile
           push: true
           cache-from: type=gha,scope=auth-service
           cache-to: type=gha,mode=max,scope=auth-service
@@ -88,7 +89,8 @@ jobs:
       - name: Build chat-service
         uses: docker/build-push-action@v6
         with:
-          context: ./services/chat-service
+          context: .
+          file: services/chat-service/Dockerfile
           push: true
           cache-from: type=gha,scope=chat-service
           cache-to: type=gha,mode=max,scope=chat-service
@@ -99,7 +101,8 @@ jobs:
       - name: Build weather-service
         uses: docker/build-push-action@v6
         with:
-          context: ./services/weather-service
+          context: .
+          file: services/weather-service/Dockerfile
           push: true
           cache-from: type=gha,scope=weather-service
           cache-to: type=gha,mode=max,scope=weather-service

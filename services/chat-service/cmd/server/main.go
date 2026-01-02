@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/L1ndenbaum/integrated-corn-assistant/common/jwtauth"
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/chat-service/internal/config"
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/chat-service/internal/dify"
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/chat-service/internal/handler"
@@ -24,9 +25,14 @@ func main() {
 		log.Fatalf("dify client error: %v", err)
 	}
 
+	jwtVerifier, err := jwtauth.NewVerifier(cfg.JWTSecret, cfg.JWTIssuer)
+	if err != nil {
+		log.Fatalf("jwt verifier error: %v", err)
+	}
+
 	gin.SetMode(gin.ReleaseMode)
 	chatHandler := handler.New(client, cfg.PageLimit)
-	router := server.NewRouter(chatHandler)
+	router := server.NewRouter(chatHandler, jwtVerifier)
 
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.Port,

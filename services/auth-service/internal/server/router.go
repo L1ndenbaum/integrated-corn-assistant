@@ -28,6 +28,7 @@ func NewRouter(handler *handler.Handler) *gin.Engine {
 		auth.POST("/login/phone", handler.LoginPhone)
 		auth.POST("/refresh", handler.Refresh)
 		auth.POST("/logout", handler.Logout)
+		auth.GET("/session", handler.Session)
 	}
 
 	return router

@@ -1,0 +1,1 @@
+- Bumped Go base images in chat-service, weather-service, and api-gateway Dockerfiles to 1.24 to satisfy go.work (1.23) minimum.

@@ -1,0 +1,5 @@
+- Added JWT verifier config and jwtauth middleware to chat-service and weather-service routes.
+- Reintroduced auth-service session endpoint protected by jwtauth for access token validation.
+- Secured diagnosis-service with JWT validation (PyJWT) and added cookie/Authorization token extraction.
+- Updated front-end chat/diagnosis requests to include credentials for cookie-based auth.
+- Passed JWT env vars to chat-service and weather-service in docker-compose.

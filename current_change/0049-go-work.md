@@ -1,0 +1,2 @@
+- Added root go.work to group Go modules in the monorepo for shared builds.
+- Updated Go service Dockerfiles and GitHub Actions contexts to build from repo root with go.work support.

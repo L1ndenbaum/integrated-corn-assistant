@@ -1,0 +1,2 @@
+- Updated auth-service session endpoint to validate refresh_token (no JWT verification) and return session metadata.
+- Removed jwtauth wiring from auth-service router and main.

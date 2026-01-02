@@ -52,6 +52,8 @@ services:
       DIFY_BASE_URL: "${DIFY_BASE_URL}"
       ALL_PROXY: "${ALL_PROXY}"
       PAGE_LIMIT: "20"
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_ISSUER: "corn-assistant"
     restart: unless-stopped
 
   weather-service:
@@ -62,6 +64,8 @@ services:
     environment:
       PORT: "8084"
       AMAP_KEY: "${AMAP_KEY}"
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_ISSUER: "corn-assistant"
     restart: unless-stopped
 
   user-service:

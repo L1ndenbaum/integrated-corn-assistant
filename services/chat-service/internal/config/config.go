@@ -12,6 +12,8 @@ type Config struct {
 	DifyBaseURL string
 	AllProxy    string
 	PageLimit   int
+	JWTSecret   string
+	JWTIssuer   string
 }
 
 func Load() (Config, error) {
@@ -21,10 +23,15 @@ func Load() (Config, error) {
 		DifyBaseURL: getEnvOrDefault("DIFY_BASE_URL", "https://api.dify.ai/v1"),
 		AllProxy:    os.Getenv("ALL_PROXY"),
 		PageLimit:   getEnvIntOrDefault("PAGE_LIMIT", 20),
+		JWTSecret:   os.Getenv("JWT_SECRET"),
+		JWTIssuer:   getEnvOrDefault("JWT_ISSUER", "corn-assistant"),
 	}
 
 	if cfg.DifyAPIKey == "" {
 		return Config{}, errors.New("DIFY_API_KEY is required")
+	}
+	if cfg.JWTSecret == "" {
+		return Config{}, errors.New("JWT_SECRET is required")
 	}
 
 	return cfg, nil

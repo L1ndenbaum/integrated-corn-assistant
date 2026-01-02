@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/L1ndenbaum/integrated-corn-assistant/common/jwtauth"
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/weather-service/internal/config"
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/weather-service/internal/handler"
 	"github.com/L1ndenbaum/integrated-corn-assistant/services/weather-service/internal/server"
@@ -18,10 +19,15 @@ func main() {
 		log.Fatalf("config error: %v", err)
 	}
 
+	jwtVerifier, err := jwtauth.NewVerifier(cfg.JWTSecret, cfg.JWTIssuer)
+	if err != nil {
+		log.Fatalf("jwt verifier error: %v", err)
+	}
+
 	gin.SetMode(gin.ReleaseMode)
 
 	weatherHandler := handler.New(cfg.AMapKey)
-	router := server.NewRouter(weatherHandler)
+	router := server.NewRouter(weatherHandler, jwtVerifier)
 
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.Port,

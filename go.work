@@ -1,0 +1,11 @@
+go 1.24.6
+
+use (
+	./api-gateway
+	./common
+	./services/auth-service
+	./services/chat-service
+	./services/user-service
+	./services/weather-service
+	./static-server
+)

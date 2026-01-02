@@ -47,6 +47,27 @@ type loginPhoneRequest struct {
 	Password string `json:"password"`
 }
 
+type sessionUserPayload struct {
+	UserUUID      string `json:"user_uuid"`
+	UserID        int64  `json:"user_id"`
+	Username      string `json:"username"`
+	UserPrivilege int32  `json:"user_privilege"`
+	UserStatus    int32  `json:"user_status"`
+	MFAEnabled    bool   `json:"mfa_enabled"`
+}
+
+type sessionMetadata struct {
+	RefreshTokenID string  `json:"refresh_token_id"`
+	IssuedAt       string  `json:"issued_at"`
+	ExpiresAt      string  `json:"expires_at"`
+	LastUsedAt     *string `json:"last_used_at,omitempty"`
+}
+
+type sessionResponse struct {
+	User    sessionUserPayload `json:"user"`
+	Session sessionMetadata    `json:"session"`
+}
+
 func (h *Handler) LoginUsername(c *gin.Context) {
 	var req loginUsernameRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.Username == "" || req.Password == "" {
@@ -78,6 +99,58 @@ func (h *Handler) LoginPhone(c *gin.Context) {
 
 	user, err := h.users.VerifyPhone(c.Request.Context(), req.Phone, req.Password)
 	h.handleLoginResult(c, user, err)
+}
+
+func (h *Handler) Session(c *gin.Context) {
+	refreshToken, err := c.Cookie("refresh_token")
+	if err != nil || refreshToken == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "会话已过期"})
+		return
+	}
+
+	refreshHash := authHash(refreshToken)
+	record, err := h.store.GetActiveRefreshTokenByHash(c.Request.Context(), refreshHash)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "会话已过期"})
+		return
+	}
+
+	_ = h.store.UpdateRefreshTokenLastUsed(c.Request.Context(), record.RefreshTokenID)
+
+	user, err := h.users.GetUserProfileByUUID(c.Request.Context(), record.UserUUID.String())
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "用户状态异常"})
+		return
+	}
+	if user.UserStatus != 1 {
+		c.JSON(http.StatusForbidden, gin.H{"error": "用户状态异常"})
+		return
+	}
+
+	issuedAt := record.IssuedAt.Format(time.RFC3339)
+	expiresAt := record.ExpiresAt.Format(time.RFC3339)
+	var lastUsedAt *string
+	if record.LastUsedAt != nil {
+		value := record.LastUsedAt.Format(time.RFC3339)
+		lastUsedAt = &value
+	}
+
+	c.JSON(http.StatusOK, sessionResponse{
+		User: sessionUserPayload{
+			UserUUID:      user.UserUUID,
+			UserID:        user.UserID,
+			Username:      user.Username,
+			UserPrivilege: user.UserPrivilege,
+			UserStatus:    user.UserStatus,
+			MFAEnabled:    user.MFAEnabled,
+		},
+		Session: sessionMetadata{
+			RefreshTokenID: record.RefreshTokenID.String(),
+			IssuedAt:       issuedAt,
+			ExpiresAt:      expiresAt,
+			LastUsedAt:     lastUsedAt,
+		},
+	})
 }
 
 func (h *Handler) Refresh(c *gin.Context) {

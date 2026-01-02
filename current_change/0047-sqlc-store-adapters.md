@@ -1,0 +1,2 @@
+- Reworked user-service and auth-service stores to use sqlc-generated queries instead of hand-written SQL.
+- Added sqlc type mapping helpers (nullable strings, uuid byte conversion, decimal formatting) and default avatar handling.

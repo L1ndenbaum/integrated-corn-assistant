@@ -1,9 +1,10 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Header, Cookie, Depends
 from fastapi.middleware.cors import CORSMiddleware
+import jwt
 import torch
 from PIL import Image
 import io, os
-from typing import List
+from typing import List, Optional
 
 import uvicorn
 from dataset import CornDiseaseDataset
@@ -11,6 +12,8 @@ from model import create_model, get_preprocessing_transforms
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 app = FastAPI(title="玉米病虫害识别API", description="提供玉米病虫害图像分类服务")
+JWT_SECRET = os.getenv("JWT_SECRET")
+JWT_ISSUER = os.getenv("JWT_ISSUER", "corn-assistant")
 allowed_origins = os.getenv("CORS_ORIGINS", "")
 if allowed_origins:
     origins = [origin.strip() for origin in allowed_origins.split(",") if origin.strip()]
@@ -58,6 +61,26 @@ def initialize_model():
     model = model.to(device)
     transform = get_preprocessing_transforms()
 
+def extract_token(authorization: Optional[str] = Header(None), access_token: Optional[str] = Cookie(None)) -> str:
+    if authorization and authorization.lower().startswith("bearer "):
+        token = authorization[7:].strip()
+        if token:
+            return token
+    if access_token:
+        return access_token
+    raise HTTPException(status_code=401, detail="未登录")
+
+def verify_jwt(token: str = Depends(extract_token)) -> dict:
+    if not JWT_SECRET:
+        raise HTTPException(status_code=500, detail="JWT未配置")
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"], issuer=JWT_ISSUER)
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="令牌已过期")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="令牌无效")
+
 @app.get("/")
 async def root():
     """根路由"""
@@ -69,7 +92,7 @@ async def health_check():
     return {"status": "healthy"}
 
 @app.post("/api/v1/diagnosis")
-async def predict(files: List[UploadFile] = File(...)):
+async def predict(files: List[UploadFile] = File(...), _payload: dict = Depends(verify_jwt)):
     """
     对上传的图像进行病虫害分类预测
     
