@@ -1,0 +1,2 @@
+- Trimmed root `go.work` to `common` + `services/user-service` to avoid missing modules in Docker build contexts.
+- Removed `go.work` copy from auth/chat/weather Dockerfiles so they rely on module `replace` to `common`.

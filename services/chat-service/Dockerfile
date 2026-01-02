@@ -1,7 +1,6 @@
 FROM golang:1.24-alpine AS build
 
 WORKDIR /src
-COPY go.work ./
 COPY services/chat-service/go.mod services/chat-service/go.sum ./services/chat-service/
 COPY common/go.mod common/go.sum ./common/
 WORKDIR /src/services/chat-service

@@ -4,7 +4,6 @@ ARG GOSUMDB
 ENV GOPROXY=${GOPROXY}
 ENV GOSUMDB=${GOSUMDB}
 WORKDIR /src
-COPY go.work ./
 COPY services/auth-service/go.mod services/auth-service/go.sum ./services/auth-service/
 COPY common/go.mod common/go.sum ./common/
 WORKDIR /src/services/auth-service

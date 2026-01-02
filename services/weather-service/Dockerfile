@@ -1,7 +1,6 @@
 FROM golang:1.24-alpine AS build
 
 WORKDIR /src
-COPY go.work ./
 COPY services/weather-service/go.mod services/weather-service/go.sum ./services/weather-service/
 COPY common/go.mod common/go.sum ./common/
 WORKDIR /src/services/weather-service
