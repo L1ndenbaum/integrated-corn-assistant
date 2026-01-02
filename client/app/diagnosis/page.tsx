@@ -57,7 +57,7 @@ export default function DiagnosisPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080"
-  const DIAGNOSIS_BASE_URL = process.env.NEXT_PUBLIC_DIAGNOSIS_BASE_URL || "http://localhost:8080"
+  const DIAGNOSIS_BASE_URL = process.env.NEXT_PUBLIC_DIAGNOSIS_BASE_URL || API_BASE_URL
 
   useEffect(() => {
     getLocation()

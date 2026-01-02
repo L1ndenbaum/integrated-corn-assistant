@@ -1,0 +1,1 @@
+- Defaulted diagnosis page base URL to `NEXT_PUBLIC_API_BASE_URL` when `NEXT_PUBLIC_DIAGNOSIS_BASE_URL` is not set.
