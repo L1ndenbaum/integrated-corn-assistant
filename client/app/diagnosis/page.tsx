@@ -55,15 +55,37 @@ export default function DiagnosisPage() {
   const [isGeneratingResponse, setIsGeneratingResponse] = useState<boolean>(false)
   const [hasStartedDiagnosis, setHasStartedDiagnosis] = useState<boolean>(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesScrollRef = useRef<HTMLDivElement>(null)
+  const shouldAutoScrollRef = useRef(true)
   const router = useRouter()
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080"
   const DIAGNOSIS_BASE_URL = process.env.NEXT_PUBLIC_DIAGNOSIS_BASE_URL || API_BASE_URL
+
+  const updateAutoScroll = useCallback(() => {
+    const container = messagesScrollRef.current
+    if (!container) {
+      return
+    }
+
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight
+    shouldAutoScrollRef.current = distanceFromBottom < 80
+  }, [])
 
   useEffect(() => {
     getLocation()
   }, [])
 
   const scrollToBottom = useCallback(() => {
+    if (!shouldAutoScrollRef.current) {
+      return
+    }
+
+    const container = messagesScrollRef.current
+    if (container) {
+      container.scrollTo({ top: container.scrollHeight, behavior: "smooth" })
+      return
+    }
+
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [])
 
@@ -504,7 +526,7 @@ export default function DiagnosisPage() {
               </div>
             </motion.div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto" ref={messagesScrollRef} onScroll={updateAutoScroll}>
               <div className="p-6 space-y-4">
                 {diagnosisResults.length > 0 && (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
